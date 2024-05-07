@@ -31,8 +31,8 @@ def optimised_strategy(n, M, S, I):
     """
 
     # Define the costs and initalise the nodes which we store during doubling
-    left_cost = (8*M + 6*S, 12*M + 12*S)       # (regular_cost, left_branch_cost) Double
-    right_cost = (4*M + 3*S, 82*M + 18*S + I)  # (regular_cost, first_right_cost) Images
+    left_cost = (8*S + 6*M, 12*M + 12*S)       # (regular_cost, left_branch_cost) Double
+    right_cost = (4*S + 3*M, 82*M + 18*S + I)  # (regular_cost, first_right_cost) Images
     checkpoints = ({}, {})  # (inner, left edge)
 
     @functools.cache
