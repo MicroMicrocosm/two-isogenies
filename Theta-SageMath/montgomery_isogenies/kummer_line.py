@@ -445,6 +445,29 @@ class KummerPoint:
             return self
         return self._double()
     
+    def double_iter(self, n):
+        """
+        Compute [2^n] P, and an additional point [(2^n) - 1] P
+
+        This is an auxiliary function for function double_iter in class CouplePoint.
+        """
+        XP, ZP = self.XZ()
+
+        R = self.base_ring()
+        X0, Z0 = R.one(), R.zero()
+        X1, Z1 = XP, ZP
+
+        # In fact, C = 1 when calling this function in CouplePoint
+        A, C = self.parent().extract_constants()
+        C24 = C + C
+        A24 = A + C24
+        C24 = C24 + C24
+        
+        for _ in range(n):
+            X1, Z1, X0, Z0 = self.xDBLADD(X1, Z1, X0, Z0, XP, ZP, A24, C24)
+        
+        return X1, Z1, X0, Z0
+    
     def _add(self, Q, PQ):
         """
         Performs differential addition assuming 

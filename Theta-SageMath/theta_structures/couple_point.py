@@ -1,5 +1,6 @@
 from sage.all import ZZ
 from utilities.discrete_log import weil_pairing_pari
+from montgomery_isogenies.kummer_line import KummerLine, KummerPoint
 
 
 class CouplePoint:
@@ -32,9 +33,10 @@ class CouplePoint:
         """
         Computes [2] P = ([2] P1, [2] P2)
         """
+        # TODO
         return ZZ(2) * self
 
-    def double_iter(self, n):
+    def double_iter_old(self, n):
         """
         Compute [2^n] P = ([2^n] P1, [2^n] P2)
         """
@@ -44,6 +46,56 @@ class CouplePoint:
         # _acted_upon_, which calls pari, which is fast
         m = ZZ(2**n)
         return m * self
+    
+    def double_iter(self, n):
+        """
+        Compute [2^n] P = ([2^n] P1, [2^n] P2)
+        
+        Using x-only coordinates and Okeya-Sakurai formula when computing [2^n] Pi
+        """
+        P_2n = ()
+        for P in self.points():
+            curve = P.curve()
+            ainva = curve.a_invariants()
+            A = ainva[1]
+            if ainva != [0, A, 0, 1, 0]:
+                raise ValueError("Must be Montgomery curve.")
+
+            P_Kummer = KummerPoint(KummerLine(curve), P)
+            X1, Z1, X0, Z0 = P_Kummer.double_iter(n) # cost : 6M + 4S + 1C
+            xP, yP = P[0], P[1]
+
+            # recover (x1, y1) cost : 12M + 3S + 1I
+            y1 = X1 * xP + Z1
+            t0 = X1 + xP * Z1
+            y1 = t0 * y1
+            y1 = y1 + y1
+            t0 = t0 ** 2
+            t1 = X1 - xP * Z1
+            t1 = t1 ** 2
+            t0 = t0 - t1
+            t0 = A * t0
+            y1 = y1 + t0
+            y1 = Z0 * y1
+            t1 = X0 * t1
+            t1 = t1 + t1
+            y1 = t1 - y1
+            t0 = yP * Z0
+            x1 = X1 * Z1
+            x1 = t0 * x1
+            x1 = x1 + x1
+            x1 = x1 + x1
+            t1 = Z1 ** 2
+            t0 = t0 * t1
+            t0 = t0 + t0
+            t0 = t0 + t0
+            t0 = 1 // t0
+            x1 = x1 * t0
+            y1 = y1 * t0
+
+            P_2n = P_2n + (curve(x1, y1), )
+        
+        return CouplePoint(P_2n[0], P_2n[1])
 
     def __getitem__(self, i):
         # Operator to get self[i].
