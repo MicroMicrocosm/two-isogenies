@@ -56,11 +56,12 @@ class CouplePoint:
         P_2n = ()
         for P in self.points():
             curve = P.curve()
-            ainva = curve.a_invariants()
-            A = ainva[1]
-            if ainva != [0, A, 0, 1, 0]:
+            ainvs = curve.a_invariants()
+            A = ainvs[1]
+            if ainvs != (0, A, 0, 1, 0):
                 raise ValueError("Must be Montgomery curve.")
-
+            A = curve.base_ring()(A)
+            
             P_Kummer = KummerPoint(KummerLine(curve), P)
             X1, Z1, X0, Z0 = P_Kummer.double_iter(n) # cost : 6M + 4S + 1C
             xP, yP = P[0], P[1]
@@ -89,7 +90,7 @@ class CouplePoint:
             t0 = t0 * t1
             t0 = t0 + t0
             t0 = t0 + t0
-            t0 = 1 // t0
+            t0 = 1 / t0
             x1 = x1 * t0
             y1 = y1 * t0
 
