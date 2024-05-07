@@ -24,7 +24,7 @@ class Isomorphism(Morphism):
                 "Dual can only be computed once domain and codomain are known"
             )
 
-        return DualIsomorphism(self.domain(), self.codomain(), N)
+        return DualIsomorphism(self.domain(), self.codomain(), self.N)
 
     def apply_isomorphism(self, P):
         """
