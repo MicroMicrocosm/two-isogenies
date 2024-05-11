@@ -94,7 +94,6 @@ class CouplePoint:
             t0 = t0 + t0
             t0 = t0 + t0
             t0 = inversion(t0)
-            # t0 = inverse_mod(t0, p)
             x1 = x1 * t0
             y1 = y1 * t0
 
