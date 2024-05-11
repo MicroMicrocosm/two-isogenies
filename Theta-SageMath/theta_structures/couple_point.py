@@ -1,5 +1,6 @@
-from sage.all import ZZ, inverse_mod
+from sage.all import ZZ
 from utilities.discrete_log import weil_pairing_pari
+from utilities.inversion import inversion
 from montgomery_isogenies.kummer_line import KummerLine, KummerPoint
 
 
@@ -92,7 +93,7 @@ class CouplePoint:
             t0 = t0 * t1
             t0 = t0 + t0
             t0 = t0 + t0
-            t0 = 1 / t0
+            t0 = inversion(t0)
             # t0 = inverse_mod(t0, p)
             x1 = x1 * t0
             y1 = y1 * t0
