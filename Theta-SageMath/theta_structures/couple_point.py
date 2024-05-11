@@ -57,7 +57,6 @@ class CouplePoint:
         for P in self.points():
             curve = P.curve()
             base_ring = curve.base_ring()
-            p = base_ring.order()
 
             ainvs = curve.a_invariants()
             A = ainvs[1]
@@ -93,7 +92,8 @@ class CouplePoint:
             t0 = t0 * t1
             t0 = t0 + t0
             t0 = t0 + t0
-            t0 = inverse_mod(t0, p)
+            t0 = 1 / t0
+            # t0 = inverse_mod(t0, p)
             x1 = x1 * t0
             y1 = y1 * t0
 
