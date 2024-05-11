@@ -74,9 +74,9 @@ class CouplePoint:
             t0 = X1 + xP * Z1
             y1 = t0 * y1
             y1 = y1 + y1
-            t0 = t0 ** 2
+            t0 = t0 * t0
             t1 = X1 - xP * Z1
-            t1 = t1 ** 2
+            t1 = t1 * t1
             t0 = t0 - t1
             t0 = A * t0
             y1 = y1 + t0
@@ -89,7 +89,7 @@ class CouplePoint:
             x1 = t0 * x1
             x1 = x1 + x1
             x1 = x1 + x1
-            t1 = Z1 ** 2
+            t1 = Z1 * Z1
             t0 = t0 * t1
             t0 = t0 + t0
             t0 = t0 + t0

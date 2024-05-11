@@ -341,8 +341,8 @@ class KummerPoint:
 
         t0 = X - Z      
         t1 = X + Z
-        t0 = t0**2
-        t1 = t1**2
+        t0 = t0 * t0
+        t1 = t1 * t1
         Z2 = C * t0
         Z2 = Z2 + Z2
         Z2 = Z2 + Z2
@@ -376,8 +376,8 @@ class KummerPoint:
         t1 = ZP * t1   
         ZP = t0 - t1   
         XP = t0 + t1   
-        ZP = ZP**2     
-        XQP = XP**2    
+        ZP = ZP * ZP
+        XQP = XP * XP
         ZQP = xPQ * ZP 
         XQP = XQP * zPQ
         
@@ -400,11 +400,11 @@ class KummerPoint:
         
         t0 = XP + ZP                  
         t1 = XP - ZP 
-        X2P = t0**2
+        X2P = t0 * t0
         t2 = XQ - ZQ
         XQP = XQ + ZQ
         t0 = t0 * t2
-        Z2P = t1**2
+        Z2P = t1 * t1
         t1 = t1 * XQP
         t2 = X2P - Z2P
         Z2P = Z2P * C24
@@ -414,8 +414,8 @@ class KummerPoint:
         Z2P = XQP + Z2P
         XQP = t0 + t1
         Z2P = Z2P * t2
-        ZQP = ZQP**2
-        XQP = XQP**2
+        ZQP = ZQP * ZQP
+        XQP = XQP * XQP
         ZQP = xPQ * ZQP
         XQP = XQP * zPQ
 

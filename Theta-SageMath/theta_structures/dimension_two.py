@@ -263,10 +263,10 @@ class ThetaPoint:
         # Temp coordinates
         # Cost 8S 3M
         xp, yp, zp, tp = self.squared_theta()
-        xp = xp**2
-        yp = Y0 * yp**2
-        zp = Z0 * zp**2
-        tp = T0 * tp**2
+        xp = xp * xp
+        yp = Y0 * (yp * yp)
+        zp = Z0 * (zp * zp)
+        tp = T0 * (tp * tp)
 
         # Final coordinates
         # Cost 3M
