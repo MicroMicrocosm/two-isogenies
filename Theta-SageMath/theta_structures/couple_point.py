@@ -1,6 +1,6 @@
 from sage.all import ZZ
 from utilities.discrete_log import weil_pairing_pari
-from utilities.inversion import inversion
+from utilities.fp2_inversion import inversion
 from montgomery_isogenies.kummer_line import KummerLine, KummerPoint
 
 

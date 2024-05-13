@@ -1,5 +1,7 @@
 from time import process_time_ns
-from sage.all import random_prime, randint, mod, GF, inverse_mod, set_random_seed
+from sage.all import random_prime, randint, GF, ZZ, set_random_seed
+
+from isogeny_diamond import DIAMONDS
 
 def cost_inverse(a):
     start = process_time_ns()
@@ -45,16 +47,17 @@ def cost_multiple(a, b):
 
 if __name__ == "__main__":
     set_random_seed(0)
-    bit_len = [254, 381, 1293] # the same with msi.rs
+    # bit_len = [254, 381, 1293] # the same with msi.rs
     print(f"{'Bit':>12}{'M':>12}{'S':>12}{'I':>12}")
-    for bits in bit_len:
-        lb = 1 << (bits-1)
-        rb = (lb << 1) - 1
-        p = random_prime(lbound=lb, n=rb)
-        F = GF(p**2, name='i')
+    for f, ea, eb, _, _ in DIAMONDS:
+        A = ZZ(2 ** ea)
+        B = ZZ(3 ** eb)
+        p = 4 * f * A * B - 1
+        bit = p.nbits()
+        F = GF(p**2, name='i', modulus=[1, 0, 1])
         i = F.gen()
-        a = F(randint(lb, rb) * i + randint(lb, rb))
-        b = F(randint(lb, rb) * i + randint(lb, rb))
+        a = F(randint(0, p-1) * i + randint(0, p-1))
+        b = F(randint(0, p-1) * i + randint(0, p-1))
 
         num = 100
         sum_multiple = 0
@@ -65,4 +68,4 @@ if __name__ == "__main__":
             sum_square += cost_square(a)
             sum_inverse += cost_inverse(a)
             # sum_inverse += cost_inverse_old(a)
-        print(f"{bits:>12}{sum_multiple/num:>12}{sum_square/num:>12}{sum_inverse/num:>12}")
+        print(f"{bit:>12}{sum_multiple/num:>12}{sum_square/num:>12}{sum_inverse/num:>12}")
