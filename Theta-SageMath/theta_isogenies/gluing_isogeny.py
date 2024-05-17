@@ -4,7 +4,7 @@ from theta_structures.couple_point import CouplePoint
 from theta_structures.dimension_two import ThetaStructure, ThetaPoint
 from theta_isogenies.isogeny import ThetaIsogeny
 from utilities.batched_inversion import batched_inversion
-from utilities.fp2_inversion import inversion
+from utilities.fp2_inversion import invert_Fp2
 
 
 class GluingThetaIsogeny(ThetaIsogeny):
@@ -370,7 +370,7 @@ class GluingThetaIsogeny(ThetaIsogeny):
         idx_w = flag ^ 3  # 2 if flag==True else 3
         wb = AyBxCtDz[idx_wb ^ self._zero_idx] * self._precomputation[idx_wb ^ self._zero_idx]
         w = xyzt[idx_w ^ self._zero_idx]
-        lam = w * inversion(wb)
+        lam = w * invert_Fp2(wb)
 
         # Finally we recover x
         xb = AyBxCtDz[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
