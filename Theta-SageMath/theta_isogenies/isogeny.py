@@ -167,12 +167,11 @@ class ThetaIsogeny(Morphism):
             C_inv = CCinv * C
             D_inv = DDinv * D
         else:
-            # Batch invert denominators
-            xB_inv, zC_inv, tD_inv = batched_inversion(xB, zC, tD)
-            A_inv = 1
-            B_inv = xB_inv * xA
-            C_inv = zC_inv * zA
-            D_inv = tD_inv * tB * B_inv
+            zCtD = zC * tD
+            A_inv = xB * zCtD
+            B_inv = xA * zCtD
+            C_inv = D
+            D_inv = C
 
             # NOTE: some of the computations we did here could be reused for the
             # arithmetic precomputations of the codomain However, we are always
