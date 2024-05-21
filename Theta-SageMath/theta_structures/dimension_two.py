@@ -74,9 +74,9 @@ class ThetaStructure:
     
     def precomputation(self):
         """
-        Inverse of theta null point in domain and
+        Inverse of standard (dual) theta null point in domain and
 
-        Inverse of the square of dual theta null point in codomain
+        Inverse of the square of dual (standard) theta null point in codomain
         """
         return self._precomputation
 
