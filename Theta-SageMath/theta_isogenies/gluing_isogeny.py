@@ -4,7 +4,6 @@ from theta_structures.couple_point import CouplePoint
 from theta_structures.dimension_two import ThetaStructure, ThetaPoint
 from theta_isogenies.isogeny import ThetaIsogeny
 from utilities.batched_inversion import batched_inversion
-from utilities.fp2_inversion import invert_Fp2
 
 
 class GluingThetaIsogeny(ThetaIsogeny):
@@ -195,6 +194,8 @@ class GluingThetaIsogeny(ThetaIsogeny):
         """
         Given two isotropic points of 8-torsion T1 and T2, compatible with
         the theta null point, compute the level two theta null point A/K_2
+
+        Cost : 8S + 13M + 1I
         """
         xAxByCyD = ThetaPoint.to_squared_theta(*T1)
         zAtBzYtD = ThetaPoint.to_squared_theta(*T2)
@@ -245,6 +246,8 @@ class GluingThetaIsogeny(ThetaIsogeny):
         difficult. We need to give the coordinates of P but also of
         P+Ti, Ti one of the point of 4-torsion used in the isogeny
         normalisation
+
+        Cost : 8S + 10M + 1I for constant time implemented
         """
         AxByCzDt = ThetaPoint.to_squared_theta(*P)
 
@@ -286,6 +289,8 @@ class GluingThetaIsogeny(ThetaIsogeny):
         Given two isotropic points of 8-torsion T1 and T2, compatible with
         the theta null point, compute the level two theta null point A/K_2
         without inversion
+
+        Cost : 8S + 4M
         """
         xAxByCyD = ThetaPoint.to_squared_theta(*T1)
         zAtBzCtD = ThetaPoint.to_squared_theta(*T2)
@@ -343,7 +348,7 @@ class GluingThetaIsogeny(ThetaIsogeny):
         P+Ti, Ti one of the point of 4-torsion used in the isogeny
         normalisation
 
-        Cost: 8S 7M 1I
+        Cost: 8S + 9M
 
         Avoid branching
         """
@@ -355,27 +360,27 @@ class GluingThetaIsogeny(ThetaIsogeny):
         # To recover values, we use the translated point to get
         AyBxCtDz = ThetaPoint.to_squared_theta(*translate)
 
-        # Directly compute y,z,t
+        # Compute the template value of y,z,t
         xyzt = [0 for _ in range(4)]
-        xyzt[1 ^ self._zero_idx] = AxByCzDt[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
+        y = AxByCzDt[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
         z = AxByCzDt[2 ^ self._zero_idx] * self._precomputation[2 ^ self._zero_idx]
+        t = AxByCzDt[3 ^ self._zero_idx] * self._precomputation[3 ^ self._zero_idx]
         xyzt[2 ^ self._zero_idx] = z
-        xyzt[3 ^ self._zero_idx] = AxByCzDt[3 ^ self._zero_idx] * self._precomputation[3 ^ self._zero_idx]
-        
+        xyzt[3 ^ self._zero_idx] = t
 
-        # We can compute x from the translation
-        # First we need a normalisation
+        # Compute lambda^{-1}
         flag = (z != 0)
         idx_wb = flag ^ 2 # 3 if flag==True else 2
         idx_w = flag ^ 3  # 2 if flag==True else 3
         wb = AyBxCtDz[idx_wb ^ self._zero_idx] * self._precomputation[idx_wb ^ self._zero_idx]
-        w = xyzt[idx_w ^ self._zero_idx]
-        lam = w * invert_Fp2(wb)
+        w = xyzt[idx_w ^ self._zero_idx] # lambda^{-1} = w / wb
 
-        # Finally we recover x
+        # Recover x,y,z,t
         xb = AyBxCtDz[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
-        xyzt[0 ^ self._zero_idx] = xb * lam
-
+        xyzt[0 ^ self._zero_idx] = xb * w
+        xyzt[1 ^ self._zero_idx] = y * wb
+        xyzt[2 ^ self._zero_idx] = z * wb
+        xyzt[3 ^ self._zero_idx] = t * wb
 
         image = ThetaPoint.to_hadamard(*xyzt)
         return self._codomain(image)
@@ -391,10 +396,11 @@ class GluingThetaIsogeny(ThetaIsogeny):
             )
 
         # Compute sum of points on elliptic curve
+        # Cost : 10S + 32M
         P_sum_T = P + self.T_shift
 
-        # Push both the point and the translation through the
-        # completion
+        # Push both the point and the translation through the completion
+        # Cost : 40M
         iso_P = self.base_change(P)
         iso_P_sum_T = self.base_change(P_sum_T)
 

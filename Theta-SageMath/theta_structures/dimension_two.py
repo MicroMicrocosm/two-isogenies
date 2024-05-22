@@ -83,6 +83,8 @@ class ThetaStructure:
     def _arithmetic_precomputation_old(self):
         """
         Precompute 6 field elements used in arithmetic and isogeny computations
+
+        Cost : 4S + 21M + 1I
         """
         a, b, c, d = self.null_point().coords()
 
@@ -111,7 +113,7 @@ class ThetaStructure:
         Precompute 8 field elements used in arithmetic and isogeny computations
         without inversion
 
-        Cost: 12M 4S
+        Cost : 4S + 12M
         """
         if not self._precomputation:
             a, b, c, d = self.null_point().coords()

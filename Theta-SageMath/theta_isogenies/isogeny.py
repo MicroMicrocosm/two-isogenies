@@ -75,6 +75,8 @@ class ThetaIsogeny(Morphism):
         """
         Given two isotropic points of 8-torsion T1 and T2, compatible with
         the theta null point, compute the level two theta null point A/K_2
+
+        Cost : 8S + 13M + 1I / 8S + 23M + 1I for the last isogeny (splitting) without precomputation
         """
         if self._hadamard[0]:
             xA, xB, _, _ = ThetaPoint.to_squared_theta(
@@ -140,7 +142,10 @@ class ThetaIsogeny(Morphism):
     def _compute_codomain(self, T1, T2):
         """
         Given two isotropic points 8-torsion T1 and T2, compatible with
-        the theta null point, compute the level two theta null point A/K_2"""
+        the theta null point, compute the level two theta null point A/K_2
+
+        Cost : 8S + 9M
+        """
         if self._hadamard[0]:
             xA, xB, _, _ = ThetaPoint.to_squared_theta(
                 *ThetaPoint.to_hadamard(*T1.coords())
@@ -152,7 +157,7 @@ class ThetaIsogeny(Morphism):
             xA, xB, _, _ = T1.squared_theta()
             zA, tB, zC, tD = T2.squared_theta()
 
-        # compute A, B, C, D
+        # Compute A, B, C, D
         xAtB = xA * tB
         zAxB = zA * xB
         A = xAtB * zA
@@ -160,32 +165,12 @@ class ThetaIsogeny(Morphism):
         C = xAtB * zC
         D = zAxB * tD
 
-        if not self._hadamard[0]:
-            _, _, _, _, AAinv, BBinv, CCinv, DDinv = self._domain.precomputation()
-            A_inv = AAinv * A
-            B_inv = BBinv * B
-            C_inv = CCinv * C
-            D_inv = DDinv * D
-        else:
-            zCtD = zC * tD
-            A_inv = xB * zCtD
-            B_inv = xA * zCtD
-            C_inv = D
-            D_inv = C
-
-            # NOTE: some of the computations we did here could be reused for the
-            # arithmetic precomputations of the codomain However, we are always
-            # in the mode (False, True) except the very last isogeny, so we do
-            # not lose much by not doing this optimisation Just in case we need
-            # it later:
-            # - for hadamard=(False, True): we can reuse the arithmetic
-            #   precomputation; we do this already above
-            # - for hadamard=(False, False): we can reuse the arithmetic
-            #   precomputation as above, and furthermore we could reuse B_inv,
-            #   C_inv, D_inv for the precomputation of the codomain
-            # - for hadamard=(True, False): we could reuse B_inv, C_inv, D_inv
-            #   for the precomputation of the codomain
-            # - for hadamard=(True, True): nothing to reuse!
+        # Compute the inverse of A, B, C, D
+        zCtD = zC * tD
+        A_inv = xB * zCtD
+        B_inv = xA * zCtD
+        C_inv = D
+        D_inv = C
 
         self._precomputation = (A_inv, B_inv, C_inv, D_inv)
         if self._hadamard[1]:

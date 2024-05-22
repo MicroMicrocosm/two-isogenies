@@ -1,6 +1,5 @@
 from sage.all import ZZ
 from utilities.discrete_log import weil_pairing_pari
-from utilities.fp2_inversion import invert_Fp2
 from montgomery_isogenies.kummer_line import KummerLine, KummerPoint
 
 
@@ -66,38 +65,33 @@ class CouplePoint:
             A = base_ring(A)
             
             P_Kummer = KummerPoint(KummerLine(curve), P)
-            X1, Z1, X0, Z0 = P_Kummer.double_iter(n) # cost : 6M + 4S + 1C
-            xP, yP = P[0], P[1]
+            X2n, Z2n, X2n1, Z2n1 = P_Kummer.double_iter(n) # cost : 4S + 6M + 1C per double and add
+            x1, y1 = P[0], P[1]
 
-            # recover (x1, y1) cost : 12M + 3S + 1I
-            y1 = X1 * xP + Z1
-            t0 = X1 + xP * Z1
-            y1 = t0 * y1
-            y1 = y1 + y1
-            t0 = t0 * t0
-            t1 = X1 - xP * Z1
-            t1 = t1 * t1
-            t0 = t0 - t1
-            t0 = A * t0
-            y1 = y1 + t0
-            y1 = Z0 * y1
-            t1 = X0 * t1
-            t1 = t1 + t1
-            y1 = t1 - y1
-            t0 = yP * Z0
-            x1 = X1 * Z1
-            x1 = t0 * x1
-            x1 = x1 + x1
-            x1 = x1 + x1
-            t1 = Z1 * Z1
-            t0 = t0 * t1
-            t0 = t0 + t0
-            t0 = t0 + t0
-            t0 = invert_Fp2(t0)
-            x1 = x1 * t0
-            y1 = y1 * t0
+            # recover [2^n]P = (X : Y : Z) cost : 3S + 11M
+            t = Z2n * Z2n1
+            X = X2n * t
+            Z = Z2n * t
+            t = x1 * x1 + 1
+            Y = A * x1
+            Y = Y + Y
+            t = t + Y
+            t = t * X
+            Y = X2n * X2n
+            Y = Y * Z2n1
+            Y = Y + Z
+            Y = Y * x1
+            Y = Y + t
+            t = x1 * Z2n
+            t = X2n - t
+            t = t * t
+            t = t * X2n1
+            Y = t - Y
+            t = y1 + y1
+            X = X * t
+            Z = Z * t
 
-            P_2n = P_2n + (curve(x1, y1), )
+            P_2n = P_2n + (curve(X, Y, Z), )
         
         return CouplePoint(P_2n[0], P_2n[1])
 
