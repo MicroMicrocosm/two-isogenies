@@ -30,7 +30,7 @@ class ThetaStructure:
         self._base_ring = cm.common_parent(*(c.parent() for c in null_point))
         self._point = ThetaPoint
         self._null_point = self._point(self, null_point)
-        self._precomputation = self._arithmetic_precomputation()
+        self._precomputation = None
 
     def null_point(self):
         """
@@ -78,7 +78,7 @@ class ThetaStructure:
 
         Inverse of the square of dual (standard) theta null point in codomain
         """
-        return self._precomputation
+        return self._arithmetic_precomputation()
 
     def _arithmetic_precomputation_old(self):
         """
@@ -113,32 +113,34 @@ class ThetaStructure:
 
         Cost: 12M 4S
         """
+        if not self._precomputation:
+            a, b, c, d = self.null_point().coords()
 
-        a, b, c, d = self.null_point().coords()
+            # Technically this computes 4A^2, 4B^2, ...
+            # but as we take quotients this doesnt matter
+            # Cost: 4S
+            AA, BB, CC, DD = self.squared_theta()
 
-        # Technically this computes 4A^2, 4B^2, ...
-        # but as we take quotients this doesnt matter
-        # Cost: 4S
-        AA, BB, CC, DD = self.squared_theta()
+            # Precomputed constants for addition and doubling
+            # b_inv, c_inv, d_inv, BB_inv, CC_inv, DD_inv = batched_inversion(b, c, d, BB, CC, DD)
 
-        # Precomputed constants for addition and doubling
-        # b_inv, c_inv, d_inv, BB_inv, CC_inv, DD_inv = batched_inversion(b, c, d, BB, CC, DD)
+            ab = a * b
+            cd = c * d
+            x0 = b * cd
+            y0 = a * cd
+            z0 = ab * d
+            t0 = ab * c
 
-        ab = a * b
-        cd = c * d
-        x0 = b * cd
-        y0 = a * cd
-        z0 = ab * d
-        t0 = ab * c
+            AABB = AA * BB
+            CCDD = CC * DD
+            X0 = BB * CCDD
+            Y0 = AA * CCDD
+            Z0 = AABB * DD
+            T0 = AABB * CC
 
-        AABB = AA * BB
-        CCDD = CC * DD
-        X0 = BB * CCDD
-        Y0 = AA * CCDD
-        Z0 = AABB * DD
-        T0 = AABB * CC
-
-        return (x0, y0, z0, t0, X0, Y0, Z0, T0)
+            self._precomputation = (x0, y0, z0, t0, X0, Y0, Z0, T0)
+        
+        return self._precomputation
 
     @cached_method
     def rosenhain_from_theta(self):
