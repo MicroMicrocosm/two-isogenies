@@ -31,6 +31,7 @@ class ThetaStructure:
         self._point = ThetaPoint
         self._null_point = self._point(self, null_point)
         self._precomputation = None
+        self._precomputation_old = None
 
     def null_point(self):
         """
@@ -71,44 +72,39 @@ class ThetaStructure:
         the theta null point of the theta structure
         """
         return self.null_point().squared_theta()
-    
-    def precomputation(self):
-        """
-        Inverse of standard (dual) theta null point in domain and
 
-        Inverse of the square of dual (standard) theta null point in codomain
-        """
-        return self._arithmetic_precomputation()
-
-    def _arithmetic_precomputation_old(self):
+    def precomputation_old(self):
         """
         Precompute 6 field elements used in arithmetic and isogeny computations
 
         Cost : 4S + 21M + 1I
         """
-        a, b, c, d = self.null_point().coords()
+        if not self._precomputation_old:
+            a, b, c, d = self.null_point().coords()
 
-        # Technically this computes 4A^2, 4B^2, ...
-        # but as we take quotients this doesnt matter
-        # Cost: 4S
-        AA, BB, CC, DD = self.squared_theta()
+            # Technically this computes 4A^2, 4B^2, ...
+            # but as we take quotients this doesnt matter
+            # Cost: 4S
+            AA, BB, CC, DD = self.squared_theta()
 
-        # Precomputed constants for addition and doubling
-        b_inv, c_inv, d_inv, BB_inv, CC_inv, DD_inv = batched_inversion(
-            b, c, d, BB, CC, DD
-        )
+            # Precomputed constants for addition and doubling
+            b_inv, c_inv, d_inv, BB_inv, CC_inv, DD_inv = batched_inversion(
+                b, c, d, BB, CC, DD
+            )
 
-        y0 = a * b_inv
-        z0 = a * c_inv
-        t0 = a * d_inv
+            y0 = a * b_inv
+            z0 = a * c_inv
+            t0 = a * d_inv
 
-        Y0 = AA * BB_inv
-        Z0 = AA * CC_inv
-        T0 = AA * DD_inv
+            Y0 = AA * BB_inv
+            Z0 = AA * CC_inv
+            T0 = AA * DD_inv
 
-        return (y0, z0, t0, Y0, Z0, T0)
+            self._precomputation_old = (y0, z0, t0, Y0, Z0, T0)
+
+        return self._precomputation_old
     
-    def _arithmetic_precomputation(self):
+    def precomputation(self):
         """
         Precompute 8 field elements used in arithmetic and isogeny computations
         without inversion
@@ -301,7 +297,7 @@ class ThetaPoint:
         # curves with a non product theta structure. The Hadamard transform
         # will not change this, we need a symplectic change of variable
         # that puts us back in a product theta structure
-        y0, z0, t0, Y0, Z0, T0 = self.parent()._arithmetic_precomputation()
+        y0, z0, t0, Y0, Z0, T0 = self.parent().precomputation_old()
 
         # Temp coordinates
         # Cost 8S 3M
@@ -332,7 +328,7 @@ class ThetaPoint:
         Cost: 8S 17M
         """
         # Extract out the precomputations
-        Y0, Z0, T0 = P.parent()._arithmetic_precomputation()[-3:]
+        Y0, Z0, T0 = P.parent().precomputation_old()[-3:]
 
         # Transform with the Hadamard matrix and multiply
         # Cost: 8S 7M
@@ -410,7 +406,7 @@ class ThetaPoint:
         Cost: 8S 18M
         """
         # Extract out the precomputations
-        X0, Y0, Z0, T0 = P.parent()._arithmetic_precomputation()[-4:]
+        X0, Y0, Z0, T0 = P.parent().precomputation()[-4:]
 
         # Transform with the Hadamard matrix and multiply
         # Cost: 8S 8M

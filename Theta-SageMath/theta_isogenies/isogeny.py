@@ -99,7 +99,7 @@ class ThetaIsogeny(Morphism):
             C = zC * zA_inv
             D = tD * tB_inv * B
 
-            _, _, _, BBinv, CCinv, DDinv = self._domain._arithmetic_precomputation()
+            _, _, _, BBinv, CCinv, DDinv = self._domain.precomputation_old()
             B_inv = BBinv * B
             C_inv = CCinv * C
             D_inv = DDinv * D
@@ -132,7 +132,7 @@ class ThetaIsogeny(Morphism):
             #   for the precomputation of the codomain
             # - for hadamard=(True, True): nothing to reuse!
 
-        self._precomputation = (B_inv, C_inv, D_inv)
+        self._precomputation = (1, B_inv, C_inv, D_inv)
         if self._hadamard[1]:
             a, b, c, d = ThetaPoint.to_hadamard(A, B, C, D)
             return ThetaStructure([a, b, c, d])
@@ -178,32 +178,6 @@ class ThetaIsogeny(Morphism):
             return ThetaStructure([a, b, c, d])
         else:
             return ThetaStructure([A, B, C, D])
-
-    def __call__old(self, P):
-        """
-        Take into input the theta null point of A/K_2, and return the image
-        of the point by the isogeny
-        """
-        if not isinstance(P, ThetaPoint):
-            raise TypeError("Isogeny evaluation expects a ThetaPoint as input")
-
-        if self._hadamard[0]:
-            xx, yy, zz, tt = ThetaPoint.to_squared_theta(
-                *ThetaPoint.to_hadamard(*P.coords())
-            )
-        else:
-            xx, yy, zz, tt = P.squared_theta()
-
-        Bi, Ci, Di = self._precomputation
-
-        yy = yy * Bi
-        zz = zz * Ci
-        tt = tt * Di
-
-        image_coords = (xx, yy, zz, tt)
-        if self._hadamard[1]:
-            image_coords = ThetaPoint.to_hadamard(*image_coords)
-        return self._codomain(image_coords)
     
     def __call__(self, P):
         """
