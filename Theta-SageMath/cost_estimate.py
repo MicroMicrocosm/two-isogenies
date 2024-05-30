@@ -48,7 +48,7 @@ def cost_multiple(a, b):
 if __name__ == "__main__":
     set_random_seed(0)
     # bit_len = [254, 381, 1293] # the same with msi.rs
-    print(f"{'Bit':>12}{'M':>12}{'S':>12}{'I':>12}")
+    print(f"{'Bit':>12}{'M':>12}{'S':>12}{'S/M':>12}{'I':>12}{'I/M':>12}{'I(old)':>12}{'I/M(old)':>12}")
     for f, ea, eb, _, _ in DIAMONDS:
         A = ZZ(2 ** ea)
         B = ZZ(3 ** eb)
@@ -63,9 +63,10 @@ if __name__ == "__main__":
         sum_multiple = 0
         sum_square = 0
         sum_inverse = 0
+        sum_inverse_old = 0
         for _ in range(num):
             sum_multiple += cost_multiple(a, b)
             sum_square += cost_square(a)
             sum_inverse += cost_inverse(a)
-            # sum_inverse += cost_inverse_old(a)
-        print(f"{bit:>12}{sum_multiple/num:>12}{sum_square/num:>12}{sum_inverse/num:>12}")
+            sum_inverse_old += cost_inverse_old(a)
+        print(f"{bit:>12}{sum_multiple/num:>12}{sum_square/num:>12}{sum_square/sum_multiple:>12.3f}{sum_inverse/num:>12}{sum_inverse/sum_multiple:>12.3f}{sum_inverse_old/num:12}{sum_inverse_old/sum_multiple:>12.3f}")
