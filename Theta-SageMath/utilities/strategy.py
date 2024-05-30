@@ -200,11 +200,11 @@ def optimised_strategy(n):
             # We need `i` moves on the left branch and `n - i` on the right branch
             # to make sure the corresponding subtrees don't overlap and everything
             # is covered exactly once
-            thiscost = thiscost + 2 * DBLcost(i, flag, leftmost)  # cost of doubling, remember that we need double T1 and T2
-            Lcost, Lflag = cost(n-i, flag, leftmost, True)  # cost of the left branch
+            thiscost = thiscost + 2 * DBLcost(i, flag, leftmost)              # cost of doubling, need to double 2 points
+            Lcost, Lflag = cost(n-i, flag, leftmost, True)                    # cost of the left branch
             thiscost = thiscost + Lcost + 2 * EVALcost(n-i, Lflag, leftmost)  # cost of evaluating images
-            RcostOLD, RflagOLD = cost(i, False, False, False)  # cost of the right branch using previous method
-            RcostNEW, RflagNEW = cost(i, True, False, False)   # cost of the right branch using new method
+            RcostOLD, RflagOLD = cost(i, False, False, False)                 # cost of the right branch using previous method
+            RcostNEW, RflagNEW = cost(i, True, False, False)                  # cost of the right branch using new method
             if RcostOLD < RcostNEW:
                 Rcost, Rflag = RcostOLD, RflagOLD
             else:
@@ -214,9 +214,10 @@ def optimised_strategy(n):
             
             if thiscost < mincost:
                 mincost = thiscost
+                minflag = thisflag
                 checkpoints[leftmost][n] = i
             
-        return thiscost, thisflag
+        return mincost, minflag
 
     def convert(n, checkpoints):
         """
