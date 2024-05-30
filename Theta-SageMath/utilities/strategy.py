@@ -52,8 +52,9 @@ def optimised_strategy_old(n):
     """
 
     # Define the costs and initalise the nodes which we store during doubling
-    left_cost = (47, 333)       # (regular_cost, left_branch_cost) Double
-    right_cost = (24, 250)  # (regular_cost, first_right_cost) Images
+    M, S, I = COST[n]['M'], COST[n]['S'], COST[n]['I']
+    left_cost = (8*S + 6*M, 12*S + 12*M)       # (regular_cost, left_branch_cost) Double
+    right_cost = (4*S + 3*M, 18*S + 82*M + 1*I)  # (regular_cost, first_right_cost) Images
     checkpoints = ({}, {})  # (inner, left edge)
 
     @functools.cache
@@ -123,51 +124,99 @@ def optimised_strategy_old(n):
 
     return l
 
-
+# fmt : on
+# COST = {
+#     9: {'M': 886, 'S': 648, 'I': 60627},        # 19
+#     72: {'M': 2103, 'S': 1892, 'I': 175458},    # 139
+#     126: {'M': 1844, 'S': 1580, 'I': 367522},   # 254
+#     176: {'M': 2349, 'S': 1783, 'I': 679602},   # 316
+#     208: {'M': 2431, 'S': 2413, 'I': 1437626},  # 381
+#     602: {'M': 4172, 'S': 3652, 'I': 22087512}  # 1180
+# }
+# data_sml = [126, 74, 52, 3314]
+# data_med = [208, 188, 153, 5939]
+# data_big = [632, 2717, 2265, 54_823]
 COST = {
-    9: {'M': 886, 'S': 648, 'I': 60627},        # 19
-    72: {'M': 2103, 'S': 1892, 'I': 175458},    # 139
-    126: {'M': 1844, 'S': 1580, 'I': 367522},   # 254
-    176: {'M': 2349, 'S': 1783, 'I': 679602},   # 316
-    208: {'M': 2431, 'S': 2413, 'I': 1437626},  # 381
-    602: {'M': 4172, 'S': 3652, 'I': 22087512}  # 1180
+    126: {'M': 74, 'S': 52, 'I': 3314},
+    208: {'M': 188, 'S': 153, 'I': 5939},
+    632: {'M': 2717, 'S': 2265, 'I': 54823}
 }
 def optimised_strategy(n):
     """"""
     M, S, I = COST[n]['M'], COST[n]['S'], COST[n]['I']
     # Define the costs and initalise the nodes which we store during doubling
-    left_cost = (4*S + 12*M, 8*S + 14*M)   # (regular_cost, left_branch_cost) Double
-    right_cost = (4*S + 4*M, 18*S + 81*M)  # (regular_cost, first_right_cost) Images
+    pre_cost = (4*S + 21*M + 1*I, 4*S + 12*M)                                     # (precious_pre_cost, new_pre_cost)
+    dbl_cost = ((8*S + 6*M, 12*S + 12*M), (8*S + 8*M, (8*S + 14*M, 6*S + 22*M)))  # (previous_dbl_cost, new_dbl_cost)
+    img_cost = ((4*S + 3*M, 18*S + 82*M + 1*I), (4*S + 4*M, 18*S + 81*M))         # (previous_img_cost, new_img_cost)
+    cod_cost = ((8*S + 23*M + 1*I, 8*S + 13*M + 1*I), (8*S + 9*M, 8*S + 4*M))     # (previous_cod_cost, new_cod_cost)
     checkpoints = ({}, {})  # (inner, left edge)
 
+    def PREcost(flag):
+        return pre_cost[flag]
+    
+    def DBLcost(n, flag, leftmost):
+        cost = dbl_cost[flag][leftmost]
+        if flag and leftmost:
+            dbl = n * cost[0] + cost[1]
+        else:
+            dbl = n * cost
+        return dbl
+    
+    def EVALcost(n, Lflag, leftmost):
+        eval = 0
+        for i in range(n):
+            eval = eval + img_cost[Lflag[i]][leftmost]
+        return eval
+    
+    def CODOMAINcost(flag, leftmost, precomp):
+        if flag:
+            codomain = cod_cost[flag][leftmost]
+        else:
+            codomain = cod_cost[flag][precomp]
+        return codomain
+
     @functools.cache
-    def cost(n, leftmost):
+    def cost(n, flag, leftmost, precomp):
         """
         The minimal cost to get to all children of a height `n` tree.
-        If `leftmost` is true, we're still on the leftmost edge of the "outermost" tree
+        If `flag` is true, we use the inverse-eliminated method.
+        If `leftmost` is true, we're still on the leftmost edge of the "outermost" tree.
+        If `precomp` is false, we need to consider the cost of precomputing.
+        Specially, if `leftmost` is true, we enforce `precomp` to be true.
+
+        To get the mincost, we need compare the result of `cost(n, False, True, True)` and `cost(n, True, True, True)`
 
         Updates a global "Check points" which are the points along a branch which we 
         keep for later
         """
         if n <= 1:
-            return 0  # no cost here
+            return CODOMAINcost(flag, leftmost, precomp), (flag, )  # cost of codomain computing and flag
 
-        c = float("inf")
+        mincost = float("inf")
         for i in range(1, n):  # where to branch off
+            thiscost = 0
+            if not precomp:
+                thiscost = PREcost(flag)  # cost of precomputing
             # We need `i` moves on the left branch and `n - i` on the right branch
             # to make sure the corresponding subtrees don't overlap and everything
             # is covered exactly once
-            thiscost = sum([
-                cost(n - i, leftmost),    # We still need to finish off our walk to the left
-                i * left_cost[leftmost],  # The cost for the moves on the left branch
-                cost(i, False),           # The tree on the right side, now definitely not leftmost
-                right_cost[leftmost] + (n - i - 1) * right_cost[False],  # The cost of moving right, maybe one at the first right cost
-            ])
-            # If a new lower cost has been found, update values
-            if thiscost < c:
-                c = thiscost
+            thiscost = thiscost + 2 * DBLcost(i, flag, leftmost)  # cost of doubling, remember that we need double T1 and T2
+            Lcost, Lflag = cost(n-i, flag, leftmost, True)  # cost of the left branch
+            thiscost = thiscost + Lcost + 2 * EVALcost(n-i, Lflag, leftmost)  # cost of evaluating images
+            RcostOLD, RflagOLD = cost(i, False, False, False)  # cost of the right branch using previous method
+            RcostNEW, RflagNEW = cost(i, True, False, False)   # cost of the right branch using new method
+            if RcostOLD < RcostNEW:
+                Rcost, Rflag = RcostOLD, RflagOLD
+            else:
+                Rcost, Rflag = RcostNEW, RflagNEW
+            thiscost = thiscost + Rcost
+            thisflag = Lflag + Rflag
+            
+            if thiscost < mincost:
+                mincost = thiscost
                 checkpoints[leftmost][n] = i
-        return c
+            
+        return thiscost, thisflag
 
     def convert(n, checkpoints):
         """
@@ -200,11 +249,29 @@ def optimised_strategy(n):
         return doubles
 
     # Compute the cost and populate the checkpoints
-    c = cost(n, True)
+    costOLD, flagOLD = cost(n, False, True, True)
+    checkpointsOLD = tuple(d.copy() for d in checkpoints)
+    costNEW, flagNEW = cost(n, True, True, True)
+    if costOLD < costNEW:
+        mincost = costOLD
+        flag = flagOLD
+        checkpoints = checkpointsOLD
+    else:
+        mincost = costNEW
+        flag = flagNEW
 
     # Use the checkpoints to compute the list
     l = convert(n, checkpoints)
 
-    return l
+    return mincost, flag, l
 
-optimised_strategy(72)
+def test_strategy():
+    for n in COST:
+        mincost, flag, l = optimised_strategy(n)
+        print(f"{n = }")
+        print(f"{mincost = }")
+        print(f"{flag = }")
+        print(f"{l = }")
+        print()
+
+# test_strategy()
