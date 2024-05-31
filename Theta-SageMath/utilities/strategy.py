@@ -270,7 +270,7 @@ def optimised_strategy(n):
     # Use the checkpoints to compute the list
     doubles = convert(n, checkpoints)
 
-    return mincost, {"flag": flag, "doubles": doubles}
+    return {"flag": flag, "doubles": doubles}
 
 def test_strategy():
     for n in COST:
