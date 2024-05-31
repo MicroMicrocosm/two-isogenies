@@ -6,7 +6,7 @@ from utilities.batched_inversion import batched_inversion
 
 
 class ThetaIsogeny(Morphism):
-    def __init__(self, domain, T1_8, T2_8, hadamard=(False, True)):
+    def __init__(self, domain, T1_8, T2_8, hadamard=(False, True), flag=False):
         """
         Compute a (2,2)-isogeny in the theta model. Expects as input:
 
@@ -68,83 +68,16 @@ class ThetaIsogeny(Morphism):
         self._domain = domain
 
         self._hadamard = hadamard
+        self.flag = flag
         self._precomputation = None
         self._codomain = self._compute_codomain(T1_8, T2_8)
 
-    def _compute_codomain_old(self, T1, T2):
-        """
-        Given two isotropic points of 8-torsion T1 and T2, compatible with
-        the theta null point, compute the level two theta null point A/K_2
-
-        Cost : 8S + 13M + 1I / 8S + 23M + 1I for the last isogeny (splitting) without precomputation
-        """
-        if self._hadamard[0]:
-            xA, xB, _, _ = ThetaPoint.to_squared_theta(
-                *ThetaPoint.to_hadamard(*T1.coords())
-            )
-            zA, tB, zC, tD = ThetaPoint.to_squared_theta(
-                *ThetaPoint.to_hadamard(*T2.coords())
-            )
-        else:
-            xA, xB, _, _ = T1.squared_theta()
-            zA, tB, zC, tD = T2.squared_theta()
-
-        if not self._hadamard[0] and self._domain._precomputation:
-            # Batch invert denominators
-            xA_inv, zA_inv, tB_inv = batched_inversion(xA, zA, tB)
-
-            # Compute A, B, C, D
-            A = ZZ(1)
-            B = xB * xA_inv
-            C = zC * zA_inv
-            D = tD * tB_inv * B
-
-            _, _, _, BBinv, CCinv, DDinv = self._domain.precomputation_old()
-            B_inv = BBinv * B
-            C_inv = CCinv * C
-            D_inv = DDinv * D
-        else:
-            # Batch invert denominators
-            xA_inv, zA_inv, tB_inv, xB_inv, zC_inv, tD_inv = batched_inversion(
-                xA, zA, tB, xB, zC, tD
-            )
-
-            # Compute A, B, C, D
-            A = ZZ(1)
-            B = xB * xA_inv
-            C = zC * zA_inv
-            D = tD * tB_inv * B
-            B_inv = xB_inv * xA
-            C_inv = zC_inv * zA
-            D_inv = tD_inv * tB * B_inv
-
-            # NOTE: some of the computations we did here could be reused for the
-            # arithmetic precomputations of the codomain However, we are always
-            # in the mode (False, True) except the very last isogeny, so we do
-            # not lose much by not doing this optimisation Just in case we need
-            # it later:
-            # - for hadamard=(False, True): we can reuse the arithmetic
-            #   precomputation; we do this already above
-            # - for hadamard=(False, False): we can reuse the arithmetic
-            #   precomputation as above, and furthermore we could reuse B_inv,
-            #   C_inv, D_inv for the precomputation of the codomain
-            # - for hadamard=(True, False): we could reuse B_inv, C_inv, D_inv
-            #   for the precomputation of the codomain
-            # - for hadamard=(True, True): nothing to reuse!
-
-        self._precomputation = (1, B_inv, C_inv, D_inv)
-        if self._hadamard[1]:
-            a, b, c, d = ThetaPoint.to_hadamard(A, B, C, D)
-            return ThetaStructure([a, b, c, d])
-        else:
-            return ThetaStructure([A, B, C, D])
-    
     def _compute_codomain(self, T1, T2):
         """
         Given two isotropic points 8-torsion T1 and T2, compatible with
         the theta null point, compute the level two theta null point A/K_2
 
-        Cost : 8S + 9M
+        Cost : 8S + 9M if flag is True else 8S + 13M + 1I / 8S + 23M + 1I without precomputation
         """
         if self._hadamard[0]:
             xA, xB, _, _ = ThetaPoint.to_squared_theta(
@@ -157,20 +90,53 @@ class ThetaIsogeny(Morphism):
             xA, xB, _, _ = T1.squared_theta()
             zA, tB, zC, tD = T2.squared_theta()
 
-        # Compute A, B, C, D
-        xAtB = xA * tB
-        zAxB = zA * xB
-        A = xAtB * zA
-        B = zAxB * tB
-        C = xAtB * zC
-        D = zAxB * tD
+        if self.flag:
+            # Compute A, B, C, D
+            xAtB = xA * tB
+            zAxB = zA * xB
+            A = xAtB * zA
+            B = zAxB * tB
+            C = xAtB * zC
+            D = zAxB * tD
 
-        # Compute the inverse of A, B, C, D
-        zCtD = zC * tD
-        A_inv = xB * zCtD
-        B_inv = xA * zCtD
-        C_inv = D
-        D_inv = C
+            # Compute the inverse of A, B, C, D
+            zCtD = zC * tD
+            A_inv = xB * zCtD
+            B_inv = xA * zCtD
+            C_inv = D
+            D_inv = C
+        else:
+            if not self._hadamard[0] and self._domain._precomputation:
+                # Batch invert denominators
+                xA_inv, zA_inv, tB_inv = batched_inversion(xA, zA, tB)
+
+                # Compute A, B, C, D
+                A = ZZ(1)
+                B = xB * xA_inv
+                C = zC * zA_inv
+                D = tD * tB_inv * B
+
+                _, _, _, _, _, BBinv, CCinv, DDinv = self._domain.precomputation(self.flag)
+                A_inv = ZZ(1)
+                B_inv = BBinv * B
+                C_inv = CCinv * C
+                D_inv = DDinv * D
+            else:
+                # Batch invert denominators
+                xA_inv, zA_inv, tB_inv, xB_inv, zC_inv, tD_inv = batched_inversion(
+                    xA, zA, tB, xB, zC, tD
+                )
+
+                # Compute A, B, C, D
+                A = ZZ(1)
+                B = xB * xA_inv
+                C = zC * zA_inv
+                D = tD * tB_inv * B
+
+                A_inv = ZZ(1)
+                B_inv = xB_inv * xA
+                C_inv = zC_inv * zA
+                D_inv = tD_inv * tB * B_inv
 
         self._precomputation = (A_inv, B_inv, C_inv, D_inv)
         if self._hadamard[1]:
@@ -183,6 +149,8 @@ class ThetaIsogeny(Morphism):
         """
         Take into inout the theta null point of A/K_2, and return the image
         of the point by the isogeny
+
+        Cost : 4S + 4M if flag is True else 4S + 3M
         """
         if not isinstance(P, ThetaPoint):
             raise TypeError("Isogeny evaluation expects a ThetaPoint as input")
@@ -194,12 +162,17 @@ class ThetaIsogeny(Morphism):
         else:
             xx, yy, zz, tt = P.squared_theta()
 
-        Ai, Bi, Ci, Di = self._precomputation
-
-        xx = xx * Ai
-        yy = yy * Bi
-        zz = zz * Ci
-        tt = tt * Di
+        if self.flag:
+            A_inv, B_inv, C_inv, D_inv = self._precomputation
+            xx = xx * A_inv
+            yy = yy * B_inv
+            zz = zz * C_inv
+            tt = tt * D_inv
+        else:
+            _, B_inv, C_inv, D_inv = self._precomputation
+            yy = yy * B_inv
+            zz = zz * C_inv
+            tt = tt * D_inv
 
         image_coods = (xx, yy, zz, tt)
         if self._hadamard[1]:

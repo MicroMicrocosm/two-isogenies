@@ -47,11 +47,13 @@ class CouplePoint:
         m = ZZ(2**n)
         return m * self
     
-    def double_iter(self, n):
+    def double_iter(self, n, flag=False):
         """
         Compute [2^n] P = ([2^n] P1, [2^n] P2)
         
-        Using x-only coordinates and Okeya-Sakurai formula when computing [2^n] Pi
+        Using x-only coordinates and Okeya-Sakurai formula when computing [2^n] Pi deponds on whether flag is True.
+
+        Cost : 8S + 12M + 2C if flag is True else 12S + 10M + 2C
         """
         P_2n = ()
         for P in self.points():
@@ -63,33 +65,51 @@ class CouplePoint:
             if ainvs != (0, A, 0, 1, 0):
                 raise ValueError("Must be Montgomery curve.")
             A = base_ring(A)
-            
-            P_Kummer = KummerPoint(KummerLine(curve), P)
-            X2n, Z2n, X2n1, Z2n1 = P_Kummer.double_iter(n) # cost : 4S + 6M + 1C per double and add
-            x1, y1 = P[0], P[1]
 
-            # recover [2^n]P = (X : Y : Z) cost : 3S + 11M
-            t = Z2n * Z2n1
-            X = X2n * t
-            Z = Z2n * t
-            t = x1 * x1 + 1
-            Y = A * x1
-            Y = Y + Y
-            t = t + Y
-            t = t * X
-            Y = X2n * X2n
-            Y = Y * Z2n1
-            Y = Y + Z
-            Y = Y * x1
-            Y = Y + t
-            t = x1 * Z2n
-            t = X2n - t
-            t = t * t
-            t = t * X2n1
-            Y = t - Y
-            t = y1 + y1
-            X = X * t
-            Z = Z * t
+            if flag:
+                P_Kummer = KummerPoint(KummerLine(curve), P)
+                X2n, Z2n, X2n1, Z2n1 = P_Kummer.double_iter(n) # cost : 4S + 6M + 1C per double and add
+                x1, y1 = P[0], P[1]
+
+                # recover [2^n]P = (X : Y : Z) cost : 3S + 11M
+                t = Z2n * Z2n1
+                X = X2n * t
+                Z = Z2n * t
+                t = x1 * x1 + 1
+                Y = A * x1
+                Y = Y + Y
+                t = t + Y
+                t = t * X
+                Y = X2n * X2n
+                Y = Y * Z2n1
+                Y = Y + Z
+                Y = Y * x1
+                Y = Y + t
+                t = x1 * Z2n
+                t = X2n - t
+                t = t * t
+                t = t * X2n1
+                Y = t - Y
+                t = y1 + y1
+                X = X * t
+                Z = Z * t
+            else:
+                X, Y, Z = P
+                for _ in range(n):
+                    xx = X * X
+                    zz = Z * Z
+                    dxz = (X + Z) * (X + Z) - xx - zz
+                    dyz = 2 * Y * Z
+                    t0 = xx - zz
+                    t1 = xx + zz
+                    X = t0 * t0
+                    X = dyz * X
+                    Y = t1 + A * dxz
+                    Y = t1 * Y
+                    Y = Y + dxz * dxz
+                    Y = t0 * Y
+                    Z = dyz * dyz
+                    Z = dyz * Z
 
             P_2n = P_2n + (curve(X, Y, Z), )
         

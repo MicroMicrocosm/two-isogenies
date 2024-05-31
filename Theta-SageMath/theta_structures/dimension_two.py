@@ -4,6 +4,7 @@ from sage.all import (
     Integer,
     HyperellipticCurve,
     PolynomialRing,
+    ZZ
 )
 from sage.structure.element import get_coercion_model, RingElement
 from utilities.batched_inversion import batched_inversion
@@ -31,7 +32,7 @@ class ThetaStructure:
         self._point = ThetaPoint
         self._null_point = self._point(self, null_point)
         self._precomputation = None
-        self._precomputation_old = None
+
 
     def null_point(self):
         """
@@ -73,43 +74,11 @@ class ThetaStructure:
         """
         return self.null_point().squared_theta()
 
-    def precomputation_old(self):
+    def precomputation(self, flag=False):
         """
-        Precompute 6 field elements used in arithmetic and isogeny computations
+        Precompute field elements used in arithmetic and isogeny computations
 
-        Cost : 4S + 21M + 1I
-        """
-        if not self._precomputation_old:
-            a, b, c, d = self.null_point().coords()
-
-            # Technically this computes 4A^2, 4B^2, ...
-            # but as we take quotients this doesnt matter
-            # Cost: 4S
-            AA, BB, CC, DD = self.squared_theta()
-
-            # Precomputed constants for addition and doubling
-            b_inv, c_inv, d_inv, BB_inv, CC_inv, DD_inv = batched_inversion(
-                b, c, d, BB, CC, DD
-            )
-
-            y0 = a * b_inv
-            z0 = a * c_inv
-            t0 = a * d_inv
-
-            Y0 = AA * BB_inv
-            Z0 = AA * CC_inv
-            T0 = AA * DD_inv
-
-            self._precomputation_old = (y0, z0, t0, Y0, Z0, T0)
-
-        return self._precomputation_old
-    
-    def precomputation(self):
-        """
-        Precompute 8 field elements used in arithmetic and isogeny computations
-        without inversion
-
-        Cost : 4S + 12M
+        Cost : 4S + 12M if flag is True else 4S + 21M + 1I
         """
         if not self._precomputation:
             a, b, c, d = self.null_point().coords()
@@ -119,22 +88,35 @@ class ThetaStructure:
             # Cost: 4S
             AA, BB, CC, DD = self.squared_theta()
 
-            # Precomputed constants for addition and doubling
-            # b_inv, c_inv, d_inv, BB_inv, CC_inv, DD_inv = batched_inversion(b, c, d, BB, CC, DD)
+            if flag:
+                ab = a * b
+                cd = c * d
+                x0 = b * cd
+                y0 = a * cd
+                z0 = ab * d
+                t0 = ab * c
 
-            ab = a * b
-            cd = c * d
-            x0 = b * cd
-            y0 = a * cd
-            z0 = ab * d
-            t0 = ab * c
+                AABB = AA * BB
+                CCDD = CC * DD
+                X0 = BB * CCDD
+                Y0 = AA * CCDD
+                Z0 = AABB * DD
+                T0 = AABB * CC
+            else:
+                # Precomputed constants for addition and doubling
+                b_inv, c_inv, d_inv, BB_inv, CC_inv, DD_inv = batched_inversion(
+                    b, c, d, BB, CC, DD
+                )
 
-            AABB = AA * BB
-            CCDD = CC * DD
-            X0 = BB * CCDD
-            Y0 = AA * CCDD
-            Z0 = AABB * DD
-            T0 = AABB * CC
+                x0 = ZZ(1)
+                y0 = a * b_inv
+                z0 = a * c_inv
+                t0 = a * d_inv
+
+                X0 = ZZ(1)
+                Y0 = AA * BB_inv
+                Z0 = AA * CC_inv
+                T0 = AA * DD_inv
 
             self._precomputation = (x0, y0, z0, t0, X0, Y0, Z0, T0)
         
@@ -281,13 +263,13 @@ class ThetaPoint:
             self._squared_theta = self.to_squared_theta(*self.coords())
         return self._squared_theta
 
-    def double_old(self):
+    def double(self, flag=False):
         """
         Computes [2]*self
 
         NOTE: Assumes that no coordinate is zero
 
-        Cost: 8S 6M
+        Cost: 8S + 8M if flag is True else 8S + 6M
         """
         # If a,b,c,d = 0, then the codomain of A->A/K_2 is a product of
         # elliptic curves with a non product theta structure.
@@ -297,142 +279,115 @@ class ThetaPoint:
         # curves with a non product theta structure. The Hadamard transform
         # will not change this, we need a symplectic change of variable
         # that puts us back in a product theta structure
-        y0, z0, t0, Y0, Z0, T0 = self.parent().precomputation_old()
+        xyztXYZT = self.parent().precomputation(flag)
+        if flag:
+            x0, y0, z0, t0, X0, Y0, Z0, T0 = xyztXYZT
 
-        # Temp coordinates
-        # Cost 8S 3M
-        xp, yp, zp, tp = self.squared_theta()
-        xp = xp * xp
-        yp = Y0 * (yp * yp)
-        zp = Z0 * (zp * zp)
-        tp = T0 * (tp * tp)
+            # Temp coordinates
+            # Cost 8S 4M
+            xp, yp, zp, tp = self.squared_theta()
+            xp = X0 * (xp * xp)
+            yp = Y0 * (yp * yp)
+            zp = Z0 * (zp * zp)
+            tp = T0 * (tp * tp)
 
-        # Final coordinates
-        # Cost 3M
-        X, Y, Z, T = self.to_hadamard(xp, yp, zp, tp)
-        X = X
-        Y = y0 * Y
-        Z = z0 * Z
-        T = t0 * T
+            # Final coordinates
+            # Cost 4M
+            X, Y, Z, T = self.to_hadamard(xp, yp, zp, tp)
+            X = x0 * X
+            Y = y0 * Y
+            Z = z0 * Z
+            T = t0 * T
+        else:
+            _, y0, z0, t0, _, Y0, Z0, T0 = xyztXYZT
+
+            # Temp coordinates
+            # Cost 8S 3M
+            xp, yp, zp, tp = self.squared_theta()
+            xp = xp * xp
+            yp = Y0 * (yp * yp)
+            zp = Z0 * (zp * zp)
+            tp = T0 * (tp * tp)
+
+            # Final coordinates
+            # Cost 3M
+            X, Y, Z, T = self.to_hadamard(xp, yp, zp, tp)
+            X = X
+            Y = y0 * Y
+            Z = z0 * Z
+            T = t0 * T
 
         coords = (X, Y, Z, T)
         return self._parent(coords)
 
-    def diff_addition_old(P, Q, PQ):
+    def diff_addition(P, Q, PQ, flag=False):
         """
         Given the theta points of P, Q and P-Q computes the theta point of
         P + Q.
 
         NOTE: Assumes that no coordinate is zero
 
-        Cost: 8S 17M
+        Cost: 8S + 18M if flag is True else 8S + 17M
         """
-        # Extract out the precomputations
-        Y0, Z0, T0 = P.parent().precomputation_old()[-3:]
+        XYZT = P.parent().precomputation(flag)[-4:]
+        if flag:
+            # Extract out the precomputations
+            X0, Y0, Z0, T0 = XYZT
 
-        # Transform with the Hadamard matrix and multiply
-        # Cost: 8S 7M
-        p1, p2, p3, p4 = P.squared_theta()
-        q1, q2, q3, q4 = Q.squared_theta()
+            # Transform with the Hadamard matrix and multiply
+            # Cost: 8S 8M
+            p1, p2, p3, p4 = P.squared_theta()
+            q1, q2, q3, q4 = Q.squared_theta()
 
-        xp = p1 * q1
-        yp = Y0 * p2 * q2
-        zp = Z0 * p3 * q3
-        tp = T0 * p4 * q4
+            xp = X0 * p1 * q1
+            yp = Y0 * p2 * q2
+            zp = Z0 * p3 * q3
+            tp = T0 * p4 * q4
 
-        # Final coordinates
-        PQx, PQy, PQz, PQt = PQ.coords()
+            # Final coordinates
+            PQx, PQy, PQz, PQt = PQ.coords()
 
-        # Note:
-        # We replace the four divisions by
-        # PQx, PQy, PQz, PQt by 10 multiplications
-        # Cost: 10M
-        PQxy = PQx * PQy
-        PQzt = PQz * PQt
+            # Note:
+            # We replace the four divisions by
+            # PQx, PQy, PQz, PQt by 10 multiplications
+            # Cost: 10M
+            PQxy = PQx * PQy
+            PQzt = PQz * PQt
 
-        X, Y, Z, T = P.to_hadamard(xp, yp, zp, tp)
-        X = X * PQzt * PQy
-        Y = Y * PQzt * PQx
-        Z = Z * PQxy * PQt
-        T = T * PQxy * PQz
+            X, Y, Z, T = P.to_hadamard(xp, yp, zp, tp)
+            X = X * PQzt * PQy
+            Y = Y * PQzt * PQx
+            Z = Z * PQxy * PQt
+            T = T * PQxy * PQz
+        else:
+            # Extract out the precomputations
+            _, Y0, Z0, T0 = XYZT
 
-        coords = (X, Y, Z, T)
-        return P.parent()(coords)
-    
-    def double(self):
-        """
-        Computes [2]*self
+            # Transform with the Hadamard matrix and multiply
+            # Cost: 8S 7M
+            p1, p2, p3, p4 = P.squared_theta()
+            q1, q2, q3, q4 = Q.squared_theta()
 
-        NOTE: Assumes that no coordinate is zero
+            xp = p1 * q1
+            yp = Y0 * p2 * q2
+            zp = Z0 * p3 * q3
+            tp = T0 * p4 * q4
 
-        Cost: 8S 8M
-        """
-        # If a,b,c,d = 0, then the codomain of A->A/K_2 is a product of
-        # elliptic curves with a non product theta structure.
-        # Unless we are very unlucky, A/K_1 will not be in this case, so we
-        # just need to Hadamard, double, and Hadamard inverse
-        # If A,B,C,D=0 then the domain itself is a product of elliptic
-        # curves with a non product theta structure. The Hadamard transform
-        # will not change this, we need a symplectic change of variable
-        # that puts us back in a product theta structure
-        x0, y0, z0, t0, X0, Y0, Z0, T0 = self.parent().precomputation()
+            # Final coordinates
+            PQx, PQy, PQz, PQt = PQ.coords()
 
-        # Temp coordinates
-        # Cost 8S 4M
-        xp, yp, zp, tp = self.squared_theta()
-        xp = X0 * (xp * xp)
-        yp = Y0 * (yp * yp)
-        zp = Z0 * (zp * zp)
-        tp = T0 * (tp * tp)
+            # Note:
+            # We replace the four divisions by
+            # PQx, PQy, PQz, PQt by 10 multiplications
+            # Cost: 10M
+            PQxy = PQx * PQy
+            PQzt = PQz * PQt
 
-        # Final coordinates
-        # Cost 4M
-        X, Y, Z, T = self.to_hadamard(xp, yp, zp, tp)
-        X = x0 * X
-        Y = y0 * Y
-        Z = z0 * Z
-        T = t0 * T
-
-        coords = (X, Y, Z, T)
-        return self._parent(coords)
-
-    def diff_addition(P, Q, PQ):
-        """
-        Given the theta points of P, Q and P-Q computes the theta point of
-        P + Q.
-
-        NOTE: Assumes that no coordinate is zero
-
-        Cost: 8S 18M
-        """
-        # Extract out the precomputations
-        X0, Y0, Z0, T0 = P.parent().precomputation()[-4:]
-
-        # Transform with the Hadamard matrix and multiply
-        # Cost: 8S 8M
-        p1, p2, p3, p4 = P.squared_theta()
-        q1, q2, q3, q4 = Q.squared_theta()
-
-        xp = X0 * p1 * q1
-        yp = Y0 * p2 * q2
-        zp = Z0 * p3 * q3
-        tp = T0 * p4 * q4
-
-        # Final coordinates
-        PQx, PQy, PQz, PQt = PQ.coords()
-
-        # Note:
-        # We replace the four divisions by
-        # PQx, PQy, PQz, PQt by 10 multiplications
-        # Cost: 10M
-        PQxy = PQx * PQy
-        PQzt = PQz * PQt
-
-        X, Y, Z, T = P.to_hadamard(xp, yp, zp, tp)
-        X = X * PQzt * PQy
-        Y = Y * PQzt * PQx
-        Z = Z * PQxy * PQt
-        T = T * PQxy * PQz
+            X, Y, Z, T = P.to_hadamard(xp, yp, zp, tp)
+            X = X * PQzt * PQy
+            Y = Y * PQzt * PQx
+            Z = Z * PQxy * PQt
+            T = T * PQxy * PQz
 
         coords = (X, Y, Z, T)
         return P.parent()(coords)
@@ -447,7 +402,7 @@ class ThetaPoint:
         scaled_coords = (n * x, n * y, n * z, n * t)
         return self._parent(scaled_coords)
 
-    def double_iter(self, m):
+    def double_iter(self, m, flag=False):
         """
         Compute [2^n] Self
 
@@ -464,7 +419,7 @@ class ThetaPoint:
 
         P1 = self
         for _ in range(m):
-            P1 = P1.double()
+            P1 = P1.double(flag)
         return P1
 
     def __mul__(self, m):

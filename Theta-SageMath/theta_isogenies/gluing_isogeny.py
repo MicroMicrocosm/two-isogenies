@@ -17,7 +17,7 @@ class GluingThetaIsogeny(ThetaIsogeny):
       be derived from [2](K1_8, K2_8)
     """
 
-    def __init__(self, K1_8, K2_8, M=None):
+    def __init__(self, K1_8, K2_8, M=None, flag=False):
         # Double points to get four-torsion, we always need one of these, used
         # for the image computations but we'll need both if we wish to derived
         # the base change matrix as well
@@ -32,6 +32,7 @@ class GluingThetaIsogeny(ThetaIsogeny):
         # Initalise self
         self._base_change_matrix = M
         self.T_shift = K1_4
+        self.flag = flag
         self._precomputation = None
         self._zero_idx = 0
 
@@ -190,107 +191,13 @@ class GluingThetaIsogeny(ThetaIsogeny):
         coords = self.apply_base_change([X1 * X2, X1 * Z2, Z1 * X2, Z1 * Z2])
         return coords
 
-    def _special_compute_codomain_old(self, T1, T2):
-        """
-        Given two isotropic points of 8-torsion T1 and T2, compatible with
-        the theta null point, compute the level two theta null point A/K_2
-
-        Cost : 8S + 13M + 1I
-        """
-        xAxByCyD = ThetaPoint.to_squared_theta(*T1)
-        zAtBzYtD = ThetaPoint.to_squared_theta(*T2)
-
-        # Find the value of the non-zero index
-        zero_idx = next((i for i, x in enumerate(xAxByCyD) if x == 0), None)
-        self._zero_idx = zero_idx
-
-        # Dumb check to make sure everything is OK
-        assert xAxByCyD[self._zero_idx] == zAtBzYtD[self._zero_idx] == 0
-
-        # Initialize lists
-        # The zero index described the permutation
-        ABCD = [0 for _ in range(4)]
-        precomp = [0 for _ in range(4)]
-
-        # Compute non-trivial numerators (Others are either 1 or 0)
-        num_1 = zAtBzYtD[1 ^ self._zero_idx]
-        num_2 = xAxByCyD[2 ^ self._zero_idx]
-        num_3 = zAtBzYtD[3 ^ self._zero_idx]
-        num_4 = xAxByCyD[3 ^ self._zero_idx]
-
-        # Compute and invert non-trivial denominators
-        den_1, den_2, den_3, den_4 = batched_inversion(num_1, num_2, num_3, num_4)
-
-        # Compute A, B, C, D
-        ABCD[0 ^ self._zero_idx] = 0
-        ABCD[1 ^ self._zero_idx] = num_1 * den_3
-        ABCD[2 ^ self._zero_idx] = num_2 * den_4
-        ABCD[3 ^ self._zero_idx] = 1
-
-        # Compute precomputation for isogeny images
-        precomp[0 ^ self._zero_idx] = 0
-        precomp[1 ^ self._zero_idx] = den_1 * num_3
-        precomp[2 ^ self._zero_idx] = den_2 * num_4
-        precomp[3 ^ self._zero_idx] = 1
-        self._precomputation = precomp
-
-        # Final Hadamard of the above coordinates
-        a, b, c, d = ThetaPoint.to_hadamard(*ABCD)
-
-        return ThetaStructure([a, b, c, d])
-
-    def special_image_old(self, P, translate):
-        """
-        When the domain is a non product theta structure on a product of
-        elliptic curves, we will have one of A,B,C,D=0, so the image is more
-        difficult. We need to give the coordinates of P but also of
-        P+Ti, Ti one of the point of 4-torsion used in the isogeny
-        normalisation
-
-        Cost : 8S + 10M + 1I for constant time implemented
-        """
-        AxByCzDt = ThetaPoint.to_squared_theta(*P)
-
-        # We are in the case where at most one of A, B, C, D is
-        # zero, so we need to account for this
-        #
-        # To recover values, we use the translated point to get
-        AyBxCtDz = ThetaPoint.to_squared_theta(*translate)
-
-        # Directly compute y,z,t
-        y = AxByCzDt[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
-        z = AxByCzDt[2 ^ self._zero_idx] * self._precomputation[2 ^ self._zero_idx]
-        t = AxByCzDt[3 ^ self._zero_idx]
-
-        # We can compute x from the translation
-        # First we need a normalisation
-        if z != 0:
-            zb = AyBxCtDz[3 ^ self._zero_idx]
-            lam = z / zb
-        else:
-            tb = AyBxCtDz[2 ^ self._zero_idx] * self._precomputation[2 ^ self._zero_idx]
-            lam = t / tb
-
-        # Finally we recover x
-        xb = AyBxCtDz[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
-        x = xb * lam
-
-        xyzt = [0 for _ in range(4)]
-        xyzt[0 ^ self._zero_idx] = x
-        xyzt[1 ^ self._zero_idx] = y
-        xyzt[2 ^ self._zero_idx] = z
-        xyzt[3 ^ self._zero_idx] = t
-
-        image = ThetaPoint.to_hadamard(*xyzt)
-        return self._codomain(image)
-
     def _special_compute_codomain(self, T1, T2):
         """
         Given two isotropic points of 8-torsion T1 and T2, compatible with
         the theta null point, compute the level two theta null point A/K_2
         without inversion
 
-        Cost : 8S + 4M
+        Cost : 8S + 4M if flag is True else 8S + 13M + 1I
         """
         xAxByCyD = ThetaPoint.to_squared_theta(*T1)
         zAtBzCtD = ThetaPoint.to_squared_theta(*T2)
@@ -313,26 +220,40 @@ class GluingThetaIsogeny(ThetaIsogeny):
         num_3 = zAtBzCtD[3 ^ self._zero_idx]
         num_4 = xAxByCyD[3 ^ self._zero_idx]
 
-        # Compute and invert non-trivial denominators
-        # den_1, den_2, den_3, den_4 = batched_inversion(num_1, num_2, num_3, num_4)
+        if self.flag:
+            # Compute temporary variable
+            t0 = num_1 * num_2
+            t1 = num_2 * num_3
+            t2 = num_3 * num_4
+            t3 = num_4 * num_1
 
-        # Compute temporary variable
-        t0 = num_1 * num_2
-        t1 = num_2 * num_3
-        t2 = num_3 * num_4
-        t3 = num_4 * num_1
+            # Compute A, B, C, D
+            ABCD[0 ^ self._zero_idx] = 0
+            ABCD[1 ^ self._zero_idx] = t3
+            ABCD[2 ^ self._zero_idx] = t1
+            ABCD[3 ^ self._zero_idx] = t2
 
-        # Compute A, B, C, D
-        ABCD[0 ^ self._zero_idx] = 0
-        ABCD[1 ^ self._zero_idx] = t3
-        ABCD[2 ^ self._zero_idx] = t1
-        ABCD[3 ^ self._zero_idx] = t2
+            # Compute precomputation for isogeny images
+            precomp[0 ^ self._zero_idx] = 0
+            precomp[1 ^ self._zero_idx] = t1
+            precomp[2 ^ self._zero_idx] = t3
+            precomp[3 ^ self._zero_idx] = t0
+        else:
+            # Compute and invert non-trivial denominators
+            den_1, den_2, den_3, den_4 = batched_inversion(num_1, num_2, num_3, num_4)
 
-        # Compute precomputation for isogeny images
-        precomp[0 ^ self._zero_idx] = 0
-        precomp[1 ^ self._zero_idx] = t1
-        precomp[2 ^ self._zero_idx] = t3
-        precomp[3 ^ self._zero_idx] = t0
+            # Compute A, B, C, D
+            ABCD[0 ^ self._zero_idx] = 0
+            ABCD[1 ^ self._zero_idx] = num_1 * den_3
+            ABCD[2 ^ self._zero_idx] = num_2 * den_4
+            ABCD[3 ^ self._zero_idx] = 1
+
+            # Compute precomputation for isogeny images
+            precomp[0 ^ self._zero_idx] = 0
+            precomp[1 ^ self._zero_idx] = den_1 * num_3
+            precomp[2 ^ self._zero_idx] = den_2 * num_4
+            precomp[3 ^ self._zero_idx] = 1
+
         self._precomputation = precomp
 
         # Final Hadamard of the above coordinates
@@ -348,9 +269,7 @@ class GluingThetaIsogeny(ThetaIsogeny):
         P+Ti, Ti one of the point of 4-torsion used in the isogeny
         normalisation
 
-        Cost: 8S + 9M
-
-        Avoid branching
+        Cost: 8S + 9M if flag is True else 8S + 10M + 1I for constant time implemented
         """
         AxByCzDt = ThetaPoint.to_squared_theta(*P)
 
@@ -360,27 +279,52 @@ class GluingThetaIsogeny(ThetaIsogeny):
         # To recover values, we use the translated point to get
         AyBxCtDz = ThetaPoint.to_squared_theta(*translate)
 
-        # Compute the template value of y,z,t
-        xyzt = [0 for _ in range(4)]
-        y = AxByCzDt[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
-        z = AxByCzDt[2 ^ self._zero_idx] * self._precomputation[2 ^ self._zero_idx]
-        t = AxByCzDt[3 ^ self._zero_idx] * self._precomputation[3 ^ self._zero_idx]
-        xyzt[2 ^ self._zero_idx] = z
-        xyzt[3 ^ self._zero_idx] = t
+        if self.flag:
+            # Compute the template value of y,z,t
+            xyzt = [0 for _ in range(4)]
+            y = AxByCzDt[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
+            z = AxByCzDt[2 ^ self._zero_idx] * self._precomputation[2 ^ self._zero_idx]
+            t = AxByCzDt[3 ^ self._zero_idx] * self._precomputation[3 ^ self._zero_idx]
+            xyzt[2 ^ self._zero_idx] = z
+            xyzt[3 ^ self._zero_idx] = t
 
-        # Compute lambda^{-1}
-        flag = (z != 0)
-        idx_wb = flag ^ 2 # 3 if flag==True else 2
-        idx_w = flag ^ 3  # 2 if flag==True else 3
-        wb = AyBxCtDz[idx_wb ^ self._zero_idx] * self._precomputation[idx_wb ^ self._zero_idx]
-        w = xyzt[idx_w ^ self._zero_idx] # lambda^{-1} = w / wb
+            # Compute lambda^{-1}
+            flag = (z != 0)
+            idx_wb = flag ^ 2 # 3 if flag==True else 2
+            idx_w = flag ^ 3  # 2 if flag==True else 3
+            wb = AyBxCtDz[idx_wb ^ self._zero_idx] * self._precomputation[idx_wb ^ self._zero_idx]
+            w = xyzt[idx_w ^ self._zero_idx] # lambda^{-1} = w / wb
 
-        # Recover x,y,z,t
-        xb = AyBxCtDz[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
-        xyzt[0 ^ self._zero_idx] = xb * w
-        xyzt[1 ^ self._zero_idx] = y * wb
-        xyzt[2 ^ self._zero_idx] = z * wb
-        xyzt[3 ^ self._zero_idx] = t * wb
+            # Recover x,y,z,t
+            xb = AyBxCtDz[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
+            xyzt[0 ^ self._zero_idx] = xb * w
+            xyzt[1 ^ self._zero_idx] = y * wb
+            xyzt[2 ^ self._zero_idx] = z * wb
+            xyzt[3 ^ self._zero_idx] = t * wb
+        else:
+            # Directly compute y,z,t
+            y = AxByCzDt[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
+            z = AxByCzDt[2 ^ self._zero_idx] * self._precomputation[2 ^ self._zero_idx]
+            t = AxByCzDt[3 ^ self._zero_idx]
+
+            # We can compute x from the translation
+            # First we need a normalisation
+            if z != 0:
+                zb = AyBxCtDz[3 ^ self._zero_idx]
+                lam = z / zb
+            else:
+                tb = AyBxCtDz[2 ^ self._zero_idx] * self._precomputation[2 ^ self._zero_idx]
+                lam = t / tb
+
+            # Finally we recover x
+            xb = AyBxCtDz[1 ^ self._zero_idx] * self._precomputation[1 ^ self._zero_idx]
+            x = xb * lam
+
+            xyzt = [0 for _ in range(4)]
+            xyzt[0 ^ self._zero_idx] = x
+            xyzt[1 ^ self._zero_idx] = y
+            xyzt[2 ^ self._zero_idx] = z
+            xyzt[3 ^ self._zero_idx] = t
 
         image = ThetaPoint.to_hadamard(*xyzt)
         return self._codomain(image)
@@ -389,6 +333,8 @@ class GluingThetaIsogeny(ThetaIsogeny):
         """
         Take into input the theta null point of A/K_2, and return the image
         of the point by the isogeny
+
+        Cost : 18S + 81M if flag is True else 18S + 82M + 1I
         """
         if not isinstance(P, CouplePoint):
             raise TypeError(
