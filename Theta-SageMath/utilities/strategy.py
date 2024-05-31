@@ -53,12 +53,14 @@ def optimised_strategy_old(n):
 
     # Define the costs and initalise the nodes which we store during doubling
     M, S, I = COST[n]['M'], COST[n]['S'], COST[n]['I']
+    pre_cost = 4*S + 21*M + 1*I
+    cod_cost = (8*S + 23*M + 1*I, 8*S + 13*M + 1*I)
     left_cost = (8*S + 6*M, 12*S + 12*M)       # (regular_cost, left_branch_cost) Double
     right_cost = (4*S + 3*M, 18*S + 82*M + 1*I)  # (regular_cost, first_right_cost) Images
     checkpoints = ({}, {})  # (inner, left edge)
 
     @functools.cache
-    def cost(n, leftmost):
+    def cost(n, leftmost, precomp):
         """
         The minimal cost to get to all children of a height `n` tree.
         If `leftmost` is true, we're still on the leftmost edge of the "outermost" tree
@@ -67,7 +69,10 @@ def optimised_strategy_old(n):
         keep for later
         """
         if n <= 1:
-            return 0  # no cost here
+            if leftmost:
+                return cod_cost[leftmost]
+            else:
+                return cod_cost[precomp]
 
         c = float("inf")
         for i in range(1, n):  # where to branch off
@@ -75,10 +80,11 @@ def optimised_strategy_old(n):
             # to make sure the corresponding subtrees don't overlap and everything
             # is covered exactly once
             thiscost = sum([
-                cost(n - i, leftmost),    # We still need to finish off our walk to the left
-                i * left_cost[leftmost],  # The cost for the moves on the left branch
-                cost(i, False),           # The tree on the right side, now definitely not leftmost
-                right_cost[leftmost] + (n - i - 1) * right_cost[False],  # The cost of moving right, maybe one at the first right cost
+                0 if precomp else pre_cost,
+                cost(n - i, leftmost, True),    # We still need to finish off our walk to the left
+                2 * i * left_cost[leftmost],  # The cost for the moves on the left branch
+                cost(i, False, False),           # The tree on the right side, now definitely not leftmost
+                2 * right_cost[leftmost] + 2 * (n - i - 1) * right_cost[False],  # The cost of moving right, maybe one at the first right cost
             ])
             # If a new lower cost has been found, update values
             if thiscost < c:
@@ -117,7 +123,7 @@ def optimised_strategy_old(n):
         return doubles
 
     # Compute the cost and populate the checkpoints
-    c = cost(n, True)
+    c = cost(n, True, True)
 
     # Use the checkpoints to compute the list
     l = convert(n, checkpoints)
@@ -264,15 +270,15 @@ def optimised_strategy(n):
     # Use the checkpoints to compute the list
     doubles = convert(n, checkpoints)
 
-    return {"flag": flag, "doubles": doubles}
+    return mincost, {"flag": flag, "doubles": doubles}
 
 def test_strategy():
     for n in COST:
-        mincost, flag, l = optimised_strategy(n)
+        mincost, strategy = optimised_strategy(n)
         print(f"{n = }")
         print(f"{mincost = }")
-        print(f"{flag = }")
-        print(f"{l = }")
+        print(f"flag = {strategy["flag"]}")
+        print(f"doubles = {strategy["doubles"]}")
         print()
 
 # test_strategy()
