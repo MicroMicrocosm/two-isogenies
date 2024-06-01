@@ -41,25 +41,25 @@ class EllipticProductIsogenySqrt(EllipticProductIsogeny):
             ker = kernel_elements[-1]
 
             while prev != (self.n - 3 - k):
-                level.append(self.strategy[strat_idx])
+                level.append(self.strategy['doubles'][strat_idx])
 
                 # Perform the doublings
-                Tp1 = ker[0].double_iter(self.strategy[strat_idx])
-                Tp2 = ker[1].double_iter(self.strategy[strat_idx])
+                Tp1 = ker[0].double_iter(self.strategy['doubles'][strat_idx], flag=self.strategy['flag'][k])
+                Tp2 = ker[1].double_iter(self.strategy['doubles'][strat_idx], flag=self.strategy['flag'][k])
 
                 ker = (Tp1, Tp2)
 
                 # Update kernel elements and bookkeeping variables
                 kernel_elements.append(ker)
-                prev += self.strategy[strat_idx]
+                prev += self.strategy['doubles'][strat_idx]
                 strat_idx += 1
 
             # Compute the codomain from the 8-torsion
             Tp1, Tp2 = ker
             if k == 0:
-                phi = GluingThetaIsogeny(Tp1, Tp2)
+                phi = GluingThetaIsogeny(Tp1, Tp2, flag=self.strategy["flag"][k])
             else:
-                phi = ThetaIsogeny(Th, Tp1, Tp2)
+                phi = ThetaIsogeny(Th, Tp1, Tp2, flag=self.strategy["flag"][k])
             Th = phi.codomain()
 
             # Update the chain of isogenies

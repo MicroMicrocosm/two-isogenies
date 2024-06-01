@@ -46,7 +46,7 @@ class ThetaIsogeny4(ThetaIsogeny):
         B_inv = AA * BB_inv * B
         C_inv = AA * CC_inv * C
         D_inv = AA * DD_inv * D
-        self._precomputation = (B_inv, C_inv, D_inv)
+        self._precomputation = (1, B_inv, C_inv, D_inv)
 
         if self._hadamard[1]:
             a, b, c, d = ThetaPoint.to_hadamard(A, B, C, D)
@@ -86,7 +86,7 @@ class ThetaIsogeny2(ThetaIsogeny4):
         B_inv = AA * BB_inv * B
         C_inv = AA * CC_inv * C
         D_inv = AA * DD_inv * D
-        self._precomputation = (B_inv, C_inv, D_inv)
+        self._precomputation = (1, B_inv, C_inv, D_inv)
 
         if self._hadamard[1]:
             a, b, c, d = ThetaPoint.to_hadamard(A, B, C, D)

@@ -3,7 +3,7 @@
 # ================================================ #
 
 
-def optimised_strategy_old_old(n, mul_c=1):
+def optimised_strategy_old(n, mul_c=1):
     """
     Algorithm 60: https://sike.org/files/SIDH-spec.pdf
     Shown to be appropriate for (l,l)-chains in
@@ -36,7 +36,7 @@ import sys
 sys.setrecursionlimit(1500)
 
 # fmt: off
-def optimised_strategy_old(n):
+def optimised_strategy_previous(n):
     """
     A modification of
 
@@ -144,8 +144,11 @@ def optimised_strategy_old(n):
 # data_big = [632, 2717, 2265, 54_823]
 COST = {
     126: {'M': 74, 'S': 52, 'I': 3314},
+    124: {'M': 74, 'S': 52, 'I': 3314},
     208: {'M': 188, 'S': 153, 'I': 5939},
-    632: {'M': 2717, 'S': 2265, 'I': 54823}
+    206: {'M': 188, 'S': 153, 'I': 5939},
+    632: {'M': 2717, 'S': 2265, 'I': 54823},
+    630: {'M': 2717, 'S': 2265, 'I': 54823},
 }
 def optimised_strategy(n):
     """"""
