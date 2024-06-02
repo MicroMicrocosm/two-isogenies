@@ -35,6 +35,43 @@ class CouplePoint:
         """
         # TODO
         return ZZ(2) * self
+    
+    @staticmethod
+    def x_dbl_add(XP, ZP, XQ, ZQ, xPQ, zPQ, a):
+        """
+        function for step in Montgomery ladder
+        simultaneous doubling and differential addition
+        
+        Input: projective coordinates P=(XP:ZP) and Q=(XQ:ZQ), 
+               projective difference P-Q=(xPQ:zPQ) and 
+               curve constant a = (A+2)/4.   
+        Output: projective coordinates of 2P=(X2P:Z2P)
+                and Q+P=(XQP:ZQP)
+
+        Cost: 4S + 6M + 1C
+        """
+        
+        t0 = XP + ZP                  
+        t1 = XP - ZP 
+        X2P = t0 * t0
+        t2 = XQ - ZQ
+        XQP = XQ + ZQ
+        t0 = t0 * t2
+        Z2P = t1 * t1
+        t1 = t1 * XQP
+        t2 = X2P - Z2P
+        X2P = X2P * Z2P
+        XQP = a * t2
+        ZQP = t0 - t1
+        Z2P = XQP + Z2P
+        XQP = t0 + t1
+        Z2P = Z2P * t2
+        ZQP = ZQP * ZQP
+        XQP = XQP * XQP
+        ZQP = xPQ * ZQP
+        XQP = XQP * zPQ
+
+        return X2P, Z2P, XQP, ZQP
 
     def double_iter_old(self, n):
         """
@@ -67,8 +104,12 @@ class CouplePoint:
             A = base_ring(A)
 
             if flag:
-                P_Kummer = KummerPoint(KummerLine(curve), P)
-                X2n, Z2n, X2n1, Z2n1 = P_Kummer.double_iter(n) # cost : 4S + 6M + 1C per double and add
+                a = (A + 2) / 4
+                XP, ZP = P[0], P[2]
+                X2n, Z2n = P[0], P[2]
+                X2n1, Z2n1 = base_ring.one(), base_ring.zero()
+                for _ in range(n):
+                    X2n, Z2n, X2n1, Z2n1 = self.x_dbl_add(X2n, Z2n, X2n1, Z2n1, XP, ZP, a)
                 x1, y1 = P[0], P[1]
 
                 # recover [2^n]P = (X : Y : Z) cost : 3S + 11M
