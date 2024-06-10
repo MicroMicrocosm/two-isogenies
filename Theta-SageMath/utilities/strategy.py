@@ -130,26 +130,7 @@ def optimised_strategy_previous(n):
 
     return l
 
-# fmt : on
-# COST = {
-#     9: {'M': 886, 'S': 648, 'I': 60627},        # 19
-#     72: {'M': 2103, 'S': 1892, 'I': 175458},    # 139
-#     126: {'M': 1844, 'S': 1580, 'I': 367522},   # 254
-#     176: {'M': 2349, 'S': 1783, 'I': 679602},   # 316
-#     208: {'M': 2431, 'S': 2413, 'I': 1437626},  # 381
-#     602: {'M': 4172, 'S': 3652, 'I': 22087512}  # 1180
-# }
-# data_sml = [126, 74, 52, 3314]
-# data_med = [208, 188, 153, 5939]
-# data_big = [632, 2717, 2265, 54_823]
-COST = {
-    126: {'M': 74, 'S': 52, 'I': 3314},
-    124: {'M': 74, 'S': 52, 'I': 3314},
-    208: {'M': 188, 'S': 153, 'I': 5939},
-    206: {'M': 188, 'S': 153, 'I': 5939},
-    632: {'M': 2717, 'S': 2265, 'I': 54823},
-    630: {'M': 2717, 'S': 2265, 'I': 54823},
-}
+
 def optimised_strategy(n):
     """"""
     M, S, I = COST[n]['M'], COST[n]['S'], COST[n]['I']
@@ -164,25 +145,25 @@ def optimised_strategy(n):
         return pre_cost[flag]
     
     def DBLcost(n, flag, leftmost):
-        cost = dbl_cost[flag][leftmost]
+        cost_per_dbl = dbl_cost[flag][leftmost]
         if flag and leftmost:
-            dbl = n * cost[0] + cost[1]
+            cost = n * cost_per_dbl[0] + cost_per_dbl[1]
         else:
-            dbl = n * cost
-        return dbl
+            cost = n * cost_per_dbl
+        return cost
     
     def EVALcost(n, Lflag, leftmost):
-        eval = 0
+        cost = 0
         for i in range(n):
-            eval = eval + img_cost[Lflag[i]][leftmost]
-        return eval
+            cost = cost + img_cost[Lflag[i]][leftmost]
+        return cost
     
     def CODOMAINcost(flag, leftmost, precomp):
         if flag:
-            codomain = cod_cost[flag][leftmost]
+            cost = cod_cost[flag][leftmost]
         else:
-            codomain = cod_cost[flag][precomp]
-        return codomain
+            cost = cod_cost[flag][precomp]
+        return cost
 
     @functools.cache
     def cost(n, flag, leftmost, precomp):
@@ -273,15 +254,24 @@ def optimised_strategy(n):
     # Use the checkpoints to compute the list
     doubles = convert(n, checkpoints)
 
-    return {"flag": flag, "doubles": doubles}
+    return {"doubles": doubles, "flag": flag,}
 
+
+COST = {
+    126: {'M': 74, 'S': 52, 'I': 3314},
+    124: {'M': 74, 'S': 52, 'I': 3314},
+    208: {'M': 188, 'S': 153, 'I': 5939},
+    206: {'M': 188, 'S': 153, 'I': 5939},
+    632: {'M': 2717, 'S': 2265, 'I': 54823},
+    630: {'M': 2717, 'S': 2265, 'I': 54823},
+}
 def test_strategy():
     for n in COST:
-        mincost, strategy = optimised_strategy(n)
+        strategy = optimised_strategy(n)
         print(f"{n = }")
-        print(f"{mincost = }")
+        # print(f"{mincost = }")
+        print(f"strategy = {strategy["doubles"]}")
         print(f"flag = {strategy["flag"]}")
-        print(f"doubles = {strategy["doubles"]}")
         print()
 
 # test_strategy()
