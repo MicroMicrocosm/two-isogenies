@@ -1405,16 +1405,7 @@ macro_rules! define_theta_structure {
                         two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [true, false], flag[k])
                 } else {
                     domain =
-                        two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [false, true], flag[k]);
-                    //debug start
-                    //println!(
-                    //    "domain.null_point\nF({}), F({}), F({}), F({})",
-                    //    domain.null_point().X,
-                    //    domain.null_point().Y,
-                    //    domain.null_point().Z,
-                    //    domain.null_point().T
-                    //);
-                    //debug end
+                        two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [false, true], flag[k])
                 }
             }
 

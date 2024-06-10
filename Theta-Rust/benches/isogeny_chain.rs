@@ -70,26 +70,25 @@ fn criterion_product_chain(c: &mut Criterion) {
         1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1,
         1, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1,
     ];
-    //let flag: [bool; 208] = [
-    //    true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
-    //    true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-    //    false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-    //    true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
-    //    true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-    //    true, true, false, true, true, true, true, true, true, true, true, true, true, true, true,
-    //    true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-    //    true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
-    //    true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
-    //    true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-    //    true, true, true, true, true, true, true, true, false, true, true, true, true, true, true,
-    //    true, true, true, true, true, true, true, true, true, true, true, true, true, false, true,
-    //    true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-    //    true, true, true, true, true, true, true, true, true, true, true, true, true,
-    //];
-    let flag: [bool; 208] = [false; 208];
+    let flag: [bool; 208] = [
+        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, false, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, false, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, false, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true,
+    ];
 
     c.bench_function(
-        "Product isogeny of 208 steps with optimised strat with 381-bit prime",
+        "Product isogeny of 208 steps with mixed optimised strategy with 381-bit prime",
         |b| b.iter(|| product_isogeny(&E1E2, &P1P2, &Q1Q2, &image_points, n, &strategy, &flag)),
     );
 }
