@@ -62,18 +62,35 @@ fn criterion_product_chain(c: &mut Criterion) {
 
     // Precomputed with strategy.py
     let strategy: [usize; 207] = [
-        84, 55, 34, 21, 13, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1,
-        1, 3, 2, 1, 1, 1, 1, 1, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 5,
-        3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 21, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1,
-        1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2,
-        1, 1, 1, 1, 1, 29, 21, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 5,
-        3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1,
-        1, 8, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1,
+        207, 79, 52, 29, 18, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1,
+        1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 11, 7, 4, 3, 1, 1, 1, 1,
+        1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 23, 11, 7, 4, 3, 1, 1, 1, 1, 1,
+        1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 9, 5, 4, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 30, 20, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1,
+        1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1,
+        1, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1,
     ];
+    //let flag: [bool; 208] = [
+    //    true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+    //    true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+    //    false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+    //    true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
+    //    true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+    //    true, true, false, true, true, true, true, true, true, true, true, true, true, true, true,
+    //    true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+    //    true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+    //    true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
+    //    true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+    //    true, true, true, true, true, true, true, true, false, true, true, true, true, true, true,
+    //    true, true, true, true, true, true, true, true, true, true, true, true, true, false, true,
+    //    true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+    //    true, true, true, true, true, true, true, true, true, true, true, true, true,
+    //];
+    let flag: [bool; 208] = [false; 208];
 
     c.bench_function(
         "Product isogeny of 208 steps with optimised strat with 381-bit prime",
-        |b| b.iter(|| product_isogeny(&E1E2, &P1P2, &Q1Q2, &image_points, n, &strategy)),
+        |b| b.iter(|| product_isogeny(&E1E2, &P1P2, &Q1Q2, &image_points, n, &strategy, &flag)),
     );
 }
 

@@ -468,11 +468,99 @@ macro_rules! define_ec_core {
                 P3
             }
 
+            /// Compute 2*P and P+Q with Montgomery ladder
+            /// P = [X0 : * : Z0], Q = [X1 : * : Z1], P-Q = [X : * : Z]
+            /// Cost: 4S + 6M + 1C
+            #[inline(always)]
+            pub fn x_dbl_add(
+                X0: &Fq,
+                Z0: &Fq,
+                X1: &Fq,
+                Z1: &Fq,
+                X: &Fq,
+                Z: &Fq,
+                A24: &Fq,
+            ) -> (Fq, Fq, Fq, Fq) {
+                let mut t0 = &*X0 + &*Z0;
+                let mut t1 = &*X0 - &*Z0;
+                let mut X2P = t0.square();
+                let mut t2 = &*X1 - &*Z1;
+                let mut XPQ = &*X1 + &*Z1;
+                t0 *= &t2;
+                let mut Z2P = t1.square();
+                t1 *= &XPQ;
+                t2 = &X2P - &Z2P;
+                X2P *= &Z2P;
+                XPQ = *A24 * &t2;
+                let mut ZPQ = &t0 - &t1;
+                Z2P += &XPQ;
+                XPQ = &t0 + &t1;
+                Z2P *= &t2;
+                ZPQ = ZPQ.square();
+                XPQ = XPQ.square();
+                ZPQ *= *X;
+                XPQ *= *Z;
+
+                (X2P, Z2P, XPQ, ZPQ)
+            }
+
             /// Return [2^n]*P as a new point
-            pub fn double_iter(self, P: &Point, n: usize) -> Point {
+            pub fn double_iter(self, P: &Point, n: usize, flag: bool) -> Point {
                 let mut P3 = *P;
-                for _ in 0..n {
-                    self.double_self(&mut P3);
+                if flag {
+                    let mut X0 = P3.X;
+                    let mut Z0 = P3.Z;
+                    let mut X1 = Fq::ONE;
+                    let mut Z1 = Fq::ZERO;
+                    for _ in 0..n {
+                        (X0, Z0, X1, Z1) =
+                            Self::x_dbl_add(&X0, &Z0, &X1, &Z1, &P.X, &P.Z, &self.A24);
+                    }
+                    // REcover y-coordinates
+                    // Cost: 3S + 11M
+                    let mut t = &Z0 * &Z1;
+                    let mut X = &X0 * &t;
+                    let mut Z = &Z0 * &t;
+                    t = &P.X.square() + &self.A.mul2() * &P.X + Fq::ONE;
+                    t *= &X;
+                    let mut Y = X0.square();
+                    Y *= &Z1;
+                    Y += &Z;
+                    Y *= &P.X;
+                    Y += &t;
+                    t = &P.X * &Z0;
+                    t -= &X0;
+                    t = t.square();
+                    t *= &X1;
+                    Y = &t - &Y;
+                    X *= &P.Y.mul2();
+                    Z *= &P.Y.mul2();
+                    P3.X = X;
+                    P3.Y = Y;
+                    P3.Z = Z;
+                    // Recover y-coordinates
+                    // Cost: 1S + 13M
+                    //let x0z = &X0 * &P.Z;
+                    //let xz0 = &P.X * &Z0;
+                    //let x0x = &X0 * &P.X;
+                    //let z0z = &Z0 * &P.Z;
+                    //let x0zxz0 = &x0z + &xz0;
+                    //let x0xz0z = &x0x + &z0z;
+                    //let z0zx0x = &z0z * &x0x;
+                    //let z0zx0xdA = &self.A.mul2() * &z0zx0x;
+                    //let mut u = &x0zxz0 * &x0xz0z;
+                    //u += &z0zx0xdA;
+                    //u *= &Z1;
+                    //let mut v = (&x0z - &xz0).square();
+                    //v *= &X1;
+                    //let w = &P.Y.mul2() * &z0z * &Z1;
+                    //P3.X = &w * &X0;
+                    //P3.Y = &v - &u;
+                    //P3.Z = &w * &Z0;
+                } else {
+                    for _ in 0..n {
+                        self.double_self(&mut P3);
+                    }
                 }
                 P3
             }
@@ -781,10 +869,10 @@ macro_rules! define_ec_core {
 
             /// Repeatedly doubles the pair of points (P1, P2) on E1 x E2 to get
             /// ([2^n]P1, [2^n]P2)
-            pub fn double_iter(self, C: &CouplePoint, n: usize) -> CouplePoint {
+            pub fn double_iter(self, C: &CouplePoint, n: usize, flag: bool) -> CouplePoint {
                 let mut C3 = *C;
-                C3.P1 = self.E1.double_iter(&C3.P1, n);
-                C3.P2 = self.E2.double_iter(&C3.P2, n);
+                C3.P1 = self.E1.double_iter(&C3.P1, n, flag);
+                C3.P2 = self.E2.double_iter(&C3.P2, n, flag);
                 C3
             }
         }

@@ -1058,6 +1058,15 @@ macro_rules! define_fp2_core {
                 self.set_sub(other);
             }
         }
+
+        impl PartialEq for Fp2 {
+            #[inline(always)]
+            fn eq(&self, other: &Fp2) -> bool {
+                (self.x0 == other.x0) & (self.x1 == other.x1)
+            }
+        }
+
+        impl Eq for Fp2 {}
     };
 } // End of macro: define_fp2_core
 

@@ -73,15 +73,26 @@ fn sqi_example() {
 
     // Strategy computed from strategy.py
     let strategy: [usize; 125] = [
-        55, 34, 21, 15, 5, 3, 2, 2, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1,
-        1, 1, 3, 2, 1, 1, 1, 1, 1, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1,
-        5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 21, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1,
-        1, 1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3,
-        2, 1, 1, 1, 1, 1,
+        125, 48, 30, 18, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1,
+        1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 11, 7, 4, 3, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 18, 11, 7, 4, 3, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1,
+        1, 3, 1, 1, 1, 1, 1,
+    ];
+    let flag: [bool; 126] = [
+        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true,
     ];
 
     // Compute chain
-    let (E3E4, images) = product_isogeny(&E1E2, &P1P2, &Q1Q2, &image_points, n, &strategy);
+    let (E3E4, images) = product_isogeny(&E1E2, &P1P2, &Q1Q2, &image_points, n, &strategy, &flag);
 
     let (E3, E4) = E3E4.curves();
     println!("E3: {}", E3);
@@ -168,18 +179,33 @@ fn three_lambda_example() {
 
     // Strategy computed from strategy.py
     let strategy: [usize; 207] = [
-        84, 55, 34, 21, 13, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1,
-        1, 3, 2, 1, 1, 1, 1, 1, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 5,
-        3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 21, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1,
-        1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2,
-        1, 1, 1, 1, 1, 29, 21, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 5,
-        3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1,
-        1, 8, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1,
+        207, 79, 52, 29, 18, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1,
+        1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 11, 7, 4, 3, 1, 1, 1, 1,
+        1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 23, 11, 7, 4, 3, 1, 1, 1, 1, 1,
+        1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 9, 5, 4, 1, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 30, 20, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1,
+        1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1,
+        1, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1,
+    ];
+    let flag: [bool; 208] = [
+        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, false, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, false, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, false, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true,
     ];
 
     // Compute chain
-    // let (E3E4, images) = product_isogeny(&E1E2, &P1P2, &Q1Q2, &mut image_points, n, &strategy);
-    let (E3E4, images) = product_isogeny(&E1E2, &P1P2, &Q1Q2, &image_points, n, &strategy);
+    let (E3E4, images) = product_isogeny(&E1E2, &P1P2, &Q1Q2, &image_points, n, &strategy, &flag);
 
     let (E3, E4) = E3E4.curves();
     println!("E3: {}", E3);
@@ -299,32 +325,77 @@ fn festa_example() {
 
     // Strategy computed from strategy.py
     let strategy: [usize; 631] = [
-        233, 144, 89, 55, 42, 34, 21, 13, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1,
-        1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1,
-        1, 1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 13, 8, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1,
-        1, 3, 2, 1, 1, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 21, 13, 8,
-        5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1,
-        1, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 34, 21, 13, 8, 5, 3, 2, 1,
-        1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3,
-        2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1,
-        1, 3, 2, 1, 1, 1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 55, 34, 21, 13, 8, 5, 3, 2, 1,
-        1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3,
-        2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1,
-        1, 3, 2, 1, 1, 1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 21, 13, 8, 5, 3, 2, 1, 1, 1, 1,
-        1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1,
-        1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 89, 55, 34, 21, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2,
-        1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1, 1,
-        1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1,
-        1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 21, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1,
-        3, 2, 1, 1, 1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1,
-        1, 1, 3, 2, 1, 1, 1, 1, 1, 34, 21, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1,
-        1, 1, 1, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2,
-        1, 1, 1, 1, 1, 13, 8, 5, 3, 2, 1, 1, 1, 1, 1, 2, 1, 1, 1, 3, 2, 1, 1, 1, 1, 1, 5, 3, 2, 1,
-        1, 1, 1, 1, 2, 1, 1, 1,
+        631, 265, 152, 86, 49, 32, 18, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3,
+        1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 14, 7, 4, 3, 1,
+        1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 5, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 19, 12, 7, 4,
+        3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 37, 19, 12, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3,
+        1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1,
+        1, 1, 1, 1, 18, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1,
+        1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 66, 37, 19, 12, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1,
+        1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1,
+        1, 18, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1,
+        1, 3, 1, 1, 1, 1, 1, 29, 18, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 7, 4, 3,
+        1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1,
+        1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 113, 66, 37, 19, 12, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1,
+        3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3,
+        1, 1, 1, 1, 1, 18, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1,
+        1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 29, 18, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1,
+        1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1,
+        3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 47, 29, 18, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 3, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 11, 7, 4, 3, 1,
+        1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 18, 11, 7, 4, 3, 1, 1,
+        1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1,
+        1, 1, 1, 3, 1, 1, 1, 1, 1,
+    ];
+    let flag: [bool; 632] = [
+        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, false, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, false, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, false, true, true, true, true, true, true,
+        true, true, true, true, true, false, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, false, true, true,
+        true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, false, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, false, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, false, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, false, true, true, true, true, true, true,
+        true, true, true, true, true, false, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, false, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, false, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, false, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, false, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, false, true, true, true, true,
+        true, true, true, true, true, true, true, false, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, false, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, false, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, false, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, false, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, false,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true,
     ];
 
     // Compute chain
-    let (E3E4, images) = product_isogeny(&E1E2, &P1P2, &Q1Q2, &image_points, n, &strategy);
+    let (E3E4, images) = product_isogeny(&E1E2, &P1P2, &Q1Q2, &image_points, n, &strategy, &flag);
 
     let (E3, E4) = E3E4.curves();
     println!("E3: {}", E3);

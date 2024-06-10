@@ -133,18 +133,18 @@ macro_rules! define_theta_structure {
         #[derive(Clone, Copy, Debug)]
         pub struct ThetaStructure {
             null_point: ThetaPoint,
-            arithmetic_precom: [Fq; 6],
+            arithmetic_precom: [Fq; 8],
         }
 
         impl ThetaStructure {
             /// Given the coordinates of a null point, create a null point and
-            /// precompute 6 Fp2 elements which are used for doubling and isogeny
-            /// computations.
+            /// precompute 6 or 8 Fp2 elements if necessaryly which are used for
+            /// doubling and isogeny computations.
             pub fn new_from_coords(X: &Fq, Z: &Fq, U: &Fq, V: &Fq) -> Self {
                 let null_point = ThetaPoint::new(X, Z, U, V);
                 Self {
                     null_point,
-                    arithmetic_precom: ThetaStructure::precomputation(&null_point),
+                    arithmetic_precom: [Fq::ZERO; 8],
                 }
             }
 
@@ -153,7 +153,7 @@ macro_rules! define_theta_structure {
             pub fn new_from_point(null_point: &ThetaPoint) -> Self {
                 Self {
                     null_point: *null_point,
-                    arithmetic_precom: ThetaStructure::precomputation(null_point),
+                    arithmetic_precom: [Fq::ZERO; 8],
                 }
             }
 
@@ -164,49 +164,91 @@ macro_rules! define_theta_structure {
 
             /// For doubling and also computing isogenies, we need the following
             /// constants, which we can precompute once for each ThetaStructure.
-            /// We require 6 Fq elements in total and the cost is
+            /// We require 6 or 8 Fq elements in total and the cost is
             /// 4S (sqr theta) + 1I + 15M (batch inversion) + 6M (calc)
-            /// Cost: 1I + 21M + 4S
+            /// Cost: 4S + 21M + 1I with previous method (6 Fq elements)
+            /// Cost: 4S + 12M with new method (8 Fq elements)
             #[inline]
-            pub fn precomputation(O0: &ThetaPoint) -> [Fq; 6] {
-                let (a, b, c, d) = O0.coords();
-                let (AA, BB, CC, DD) = O0.squared_theta();
+            pub fn precomputation(&mut self, flag: bool) -> [Fq; 8] {
+                if self.arithmetic_precom == [Fq::ZERO; 8] {
+                    let (a, b, c, d) = self.null_point().coords();
+                    let (AA, BB, CC, DD) = self.null_point().squared_theta();
 
-                // Use Montgomery's trick to match invert k values for a cost
-                // of a single inversion and 3(k - 1) multiplications. Inversion
-                // is done in place
-                let mut inverses = [b, c, d, BB, CC, DD];
-                Fq::batch_invert(&mut inverses);
+                    let [x0, y0, z0, t0, X0, Y0, Z0, T0]: [Fq; 8];
 
-                let y0 = &a * &inverses[0];
-                let z0 = &a * &inverses[1];
-                let t0 = &a * &inverses[2];
+                    if flag {
+                        // Compute with inverse free method
+                        let ab = &a * &b;
+                        let cd = &c * &d;
+                        x0 = &b * cd;
+                        y0 = &a * cd;
+                        z0 = ab * &d;
+                        t0 = ab * &c;
 
-                let Y0 = &AA * &inverses[3];
-                let Z0 = &AA * &inverses[4];
-                let T0 = &AA * &inverses[5];
+                        let AABB = &AA * &BB;
+                        let CCDD = &CC * &DD;
+                        X0 = &BB * CCDD;
+                        Y0 = &AA * CCDD;
+                        Z0 = AABB * &DD;
+                        T0 = AABB * &CC;
+                    } else {
+                        // Use Montgomery's trick to match invert k values for a cost
+                        // of a single inversion and 3(k - 1) multiplications. Inversion
+                        // is done in place
+                        let mut inverses = [b, c, d, BB, CC, DD];
+                        Fq::batch_invert(&mut inverses);
 
-                [y0, z0, t0, Y0, Z0, T0]
+                        x0 = Fq::ONE;
+                        y0 = &a * &inverses[0];
+                        z0 = &a * &inverses[1];
+                        t0 = &a * &inverses[2];
+
+                        X0 = Fq::ONE;
+                        Y0 = &AA * &inverses[3];
+                        Z0 = &AA * &inverses[4];
+                        T0 = &AA * &inverses[5];
+                    }
+                    self.arithmetic_precom = [x0, y0, z0, t0, X0, Y0, Z0, T0];
+                }
+                self.arithmetic_precom
             }
 
             /// Given a point P, compute it's double [2]P in place.
-            /// Cost 8S + 6M
+            /// Cost: 8S + 6M with previous method
+            /// Cost: 8S + 8M with new method
             #[inline(always)]
-            pub fn set_double_self(self, P: &mut ThetaPoint) {
+            pub fn set_double_self(&mut self, P: &mut ThetaPoint, flag: bool) {
                 let (mut xp, mut yp, mut zp, mut tp) = P.squared_theta();
+                let [x0, y0, z0, t0, X0, Y0, Z0, T0] = self.precomputation(flag);
 
-                // Compute temp. coordinates, 8S and 3M
-                xp = xp.square();
-                yp = &self.arithmetic_precom[3] * &yp.square();
-                zp = &self.arithmetic_precom[4] * &zp.square();
-                tp = &self.arithmetic_precom[5] * &tp.square();
+                let [mut X, mut Y, mut Z, mut T]: [Fq; 4];
 
-                // Compute the final coordinates, 3M
-                let (X, mut Y, mut Z, mut T) = to_hadamard(&xp, &yp, &zp, &tp);
-                Y *= &self.arithmetic_precom[0];
-                Z *= &self.arithmetic_precom[1];
-                T *= &self.arithmetic_precom[2];
+                if flag {
+                    // Compute temp. coordinates, 8S + 4M
+                    xp = &X0 * &xp.square();
+                    yp = &Y0 * &yp.square();
+                    zp = &Z0 * &zp.square();
+                    tp = &T0 * &tp.square();
 
+                    // Compute the final coordinates, 4M
+                    (X, Y, Z, T) = to_hadamard(&xp, &yp, &zp, &tp);
+                    X *= &x0;
+                    Y *= &y0;
+                    Z *= &z0;
+                    T *= &t0;
+                } else {
+                    // Compute temp. coordinates, 8S and 3M
+                    xp = xp.square();
+                    yp = &Y0 * &yp.square();
+                    zp = &Z0 * &zp.square();
+                    tp = &T0 * &tp.square();
+
+                    // Compute the final coordinates, 3M
+                    (X, Y, Z, T) = to_hadamard(&xp, &yp, &zp, &tp);
+                    Y *= &y0;
+                    Z *= &z0;
+                    T *= &t0;
+                }
                 P.X = X;
                 P.Y = Y;
                 P.Z = Z;
@@ -215,18 +257,18 @@ macro_rules! define_theta_structure {
 
             /// Compute [2] * self
             #[inline]
-            pub fn double_point(self, P: &ThetaPoint) -> ThetaPoint {
+            pub fn double_point(&mut self, P: &ThetaPoint, flag: bool) -> ThetaPoint {
                 let mut P2 = *P;
-                self.set_double_self(&mut P2);
+                self.set_double_self(&mut P2, flag);
                 P2
             }
 
             /// Compute [2^n] * self
             #[inline]
-            pub fn double_iter(self, P: &ThetaPoint, n: usize) -> ThetaPoint {
+            pub fn double_iter(&mut self, P: &ThetaPoint, n: usize, flag: bool) -> ThetaPoint {
                 let mut R = *P;
                 for _ in 0..n {
-                    self.set_double_self(&mut R)
+                    self.set_double_self(&mut R, flag)
                 }
                 R
             }
@@ -419,46 +461,67 @@ macro_rules! define_theta_structure {
         /// zero-dual coordinate. There's a chance refactoring this could make
         /// it appear more friendly
         ///
-        /// Cost: 8S 13M 1I
+        /// Cost: 8S + 13M + 1I for the previous method
+        /// Cost: 8S + 4M for the new method
         fn gluing_codomain(
             T1_8: &ThetaPoint,
             T2_8: &ThetaPoint,
-        ) -> (ThetaStructure, (Fq, Fq), usize) {
+            flag: bool,
+        ) -> (ThetaStructure, [Fq; 4], usize) {
             // First construct the dual coordinates of the kernel and look
             // for the element which is zero
             // For convenience we pack this as an array instead of a tuple:
             let xAxByCyD: [Fq; 4] = T1_8.squared_theta().into();
-            let zAtBzYtD: [Fq; 4] = T2_8.squared_theta().into();
+            let zAtBzCtD: [Fq; 4] = T2_8.squared_theta().into();
 
             // One element for each array above will be zero. Identify this
             // element to get the right permutation below for filling arrays
             let z_idx = zero_index(&xAxByCyD);
 
             // Compute intermediate values for codomain
-            let t1 = zAtBzYtD[1 ^ z_idx];
+            let t1 = zAtBzCtD[1 ^ z_idx];
             let t2 = xAxByCyD[2 ^ z_idx];
-            let t3 = zAtBzYtD[3 ^ z_idx];
+            let t3 = zAtBzCtD[3 ^ z_idx];
             let t4 = xAxByCyD[3 ^ z_idx];
 
-            // Invert all four values for codomain and images
-            let mut inverse = [t1, t2, t3, t4];
-            Fq::batch_invert(&mut inverse);
-
-            // Codomain coefficients
             let mut ABCD = [Fq::ZERO; 4];
-            ABCD[0 ^ z_idx] = Fq::ZERO;
-            ABCD[1 ^ z_idx] = &t1 * &inverse[2];
-            ABCD[2 ^ z_idx] = &t2 * &inverse[3];
-            ABCD[3 ^ z_idx] = Fq::ONE;
+            let mut precomp = [Fq::ZERO; 4];
+            if flag {
+                // Compute temporary variable
+                let temp1 = &t1 * &t2;
+                let temp2 = &t2 * &t3;
+                let temp3 = &t3 * &t4;
+                let temp4 = &t4 * &t1;
 
-            // Used for the image computation
-            let a_inverse = &t3 * &inverse[0];
-            let b_inverse = &t4 * &inverse[1];
+                // Codomain coefficients
+                ABCD[1 ^ z_idx] = temp4;
+                ABCD[2 ^ z_idx] = temp2;
+                ABCD[3 ^ z_idx] = temp3;
+
+                // Used for the image computation
+                precomp[1 ^ z_idx] = temp2;
+                precomp[2 ^ z_idx] = temp4;
+                precomp[3 ^ z_idx] = temp1;
+            } else {
+                // Invert all four values for codomain and images
+                let mut inverse = [t1, t2, t3, t4];
+                Fq::batch_invert(&mut inverse);
+
+                // Codomain coefficients
+                ABCD[1 ^ z_idx] = &t1 * &inverse[2];
+                ABCD[2 ^ z_idx] = &t2 * &inverse[3];
+                ABCD[3 ^ z_idx] = Fq::ONE;
+
+                // Used for the image computation
+                precomp[1 ^ z_idx] = &t3 * &inverse[0];
+                precomp[2 ^ z_idx] = &t4 * &inverse[1];
+                precomp[3 ^ z_idx] = Fq::ONE;
+            }
 
             let (A, B, C, D) = to_hadamard(&ABCD[0], &ABCD[1], &ABCD[2], &ABCD[3]);
             let codomain = ThetaStructure::new_from_coords(&A, &B, &C, &D);
 
-            (codomain, (a_inverse, b_inverse), z_idx)
+            (codomain, precomp, z_idx)
         }
 
         /// Given a point and it's shifted value, compute the image of this
@@ -468,13 +531,14 @@ macro_rules! define_theta_structure {
         /// is zero, so we take values from both and use linear algebra to recover
         /// the correct image.
         ///
-        /// Cost: 8S + 10M + 1I
+        /// Cost: 8S + 10M + 1I for the previous method
+        /// Cost: 8S + 9M for the new method
         fn gluing_image(
             T: &ThetaPoint,
             T_shift: &ThetaPoint,
-            a_inv: &Fq,
-            b_inv: &Fq,
+            precomp: &[Fq; 4],
             z_idx: usize,
+            flag: bool,
         ) -> ThetaPoint {
             // Find dual coordinates of point to push through
             let AxByCzDt: [Fq; 4] = T.squared_theta().into();
@@ -484,43 +548,65 @@ macro_rules! define_theta_structure {
             // To recover values, we use the translated point to get
             let AyBxCtDz: [Fq; 4] = T_shift.squared_theta().into();
 
-            // We can always directly compute three elements
-            let y = AxByCzDt[1 ^ z_idx] * a_inv;
-            let z = AxByCzDt[2 ^ z_idx] * b_inv;
-            let t = AxByCzDt[3 ^ z_idx];
-
-            // To compute the `x` value, we need to compute a scalar, lambda,
-            // which we use to normalise the given `xb`. We can always do this,
-            // but we are required to compute an inverse which means checking
-            // whether z is zero. If z is zero, we can compute lambda by simply
-            // extracting the scaled zb and dividing by b from above. However,
-            // when z is zero, we instead have to use t. To ensure that this is
-            // constant time, we compute both using that inverting zero just
-            // gives zero and conditionally swapping lanbda with lambda_t
-            let zb = AyBxCtDz[3 ^ z_idx];
-            let tb = &AyBxCtDz[2 ^ z_idx] * b_inv;
-
-            let mut inverse = [zb, tb];
-            Fq::batch_invert(&mut inverse);
-
-            // Potentially one of these inverses are zero, but we do both
-            // to avoid branching.
-            let mut lam = &z * &inverse[0];
-            let lam_t = &t * &inverse[1];
-            lam.set_cond(&lam_t, z.iszero());
-
-            // Finally we recover x
-            let xb = AyBxCtDz[1 ^ z_idx] * a_inv;
-            let x = xb * lam;
-
-            // We now have values for `x,y,z,t` but to order them we need to use
-            // the xor trick as above, so we pack them into an array with the
-            // right ordering and then extract them back out
             let mut xyzt = [Fq::ZERO; 4];
-            xyzt[0 ^ z_idx] = x;
-            xyzt[1 ^ z_idx] = y;
-            xyzt[2 ^ z_idx] = z;
-            xyzt[3 ^ z_idx] = t;
+            if flag {
+                let y = &AxByCzDt[1 ^ z_idx] * &precomp[1 ^ z_idx];
+                let z = &AxByCzDt[2 ^ z_idx] * &precomp[2 ^ z_idx];
+                let t = &AxByCzDt[3 ^ z_idx] * &precomp[3 ^ z_idx];
+                xyzt[2 ^ z_idx] = z;
+                xyzt[3 ^ z_idx] = t;
+
+                // Compute lambda^{-1}
+                let f = (z.iszero() == 0x00000000) as usize;
+                let idx_wb = f ^ 2;
+                let idx_w = f ^ 3;
+                let wb = &AyBxCtDz[idx_wb ^ z_idx] * &precomp[idx_wb ^ z_idx];
+                let w = &xyzt[idx_w ^ z_idx];
+
+                // Recover x, y, z, t
+                let xb = &AyBxCtDz[1 ^ z_idx] * &precomp[1 ^ z_idx];
+                xyzt[0 ^ z_idx] = xb * w;
+                xyzt[1 ^ z_idx] = y * wb;
+                xyzt[2 ^ z_idx] = z * wb;
+                xyzt[3 ^ z_idx] = t * wb;
+            } else {
+                // We can always directly compute three elements
+                let y = AxByCzDt[1 ^ z_idx] * precomp[1 ^ z_idx];
+                let z = AxByCzDt[2 ^ z_idx] * precomp[2 ^ z_idx];
+                let t = AxByCzDt[3 ^ z_idx];
+
+                // To compute the `x` value, we need to compute a scalar, lambda,
+                // which we use to normalise the given `xb`. We can always do this,
+                // but we are required to compute an inverse which means checking
+                // whether z is zero. If z is zero, we can compute lambda by simply
+                // extracting the scaled zb and dividing by b from above. However,
+                // when z is zero, we instead have to use t. To ensure that this is
+                // constant time, we compute both using that inverting zero just
+                // gives zero and conditionally swapping lanbda with lambda_t
+                let zb = AyBxCtDz[3 ^ z_idx];
+                let tb = &AyBxCtDz[2 ^ z_idx] * precomp[2 ^ z_idx];
+
+                let mut inverse = [zb, tb];
+                Fq::batch_invert(&mut inverse);
+
+                // Potentially one of these inverses are zero, but we do both
+                // to avoid branching.
+                let mut lam = &z * &inverse[0];
+                let lam_t = &t * &inverse[1];
+                lam.set_cond(&lam_t, z.iszero());
+
+                // Finally we recover x
+                let xb = AyBxCtDz[1 ^ z_idx] * precomp[1 ^ z_idx];
+                let x = xb * lam;
+
+                // We now have values for `x,y,z,t` but to order them we need to use
+                // the xor trick as above, so we pack them into an array with the
+                // right ordering and then extract them back out
+                xyzt[0 ^ z_idx] = x;
+                xyzt[1 ^ z_idx] = y;
+                xyzt[2 ^ z_idx] = z;
+                xyzt[3 ^ z_idx] = t;
+            }
 
             let (x, y, z, t) = to_hadamard(&xyzt[0], &xyzt[1], &xyzt[2], &xyzt[3]);
 
@@ -534,6 +620,7 @@ macro_rules! define_theta_structure {
             P1P2_8: &CouplePoint,
             Q1Q2_8: &CouplePoint,
             image_points: &[CouplePoint],
+            flag: bool,
         ) -> (ThetaStructure, Vec<ThetaPoint>) {
             // First recover the four torsion below the 8 torsion
             let P1P2_4 = E1E2.double(&P1P2_8);
@@ -552,7 +639,7 @@ macro_rules! define_theta_structure {
             // with kernel below T1, and T2.
             // We save the zero index, as we use it for the images, and we also
             // can precompute a few inverses to save time for evaluation.
-            let (codomain, (a_inv, b_inv), z_idx) = gluing_codomain(&T1_8, &T2_8);
+            let (codomain, precomp, z_idx) = gluing_codomain(&T1_8, &T2_8, flag);
 
             // We now want to push through a set of points by evaluating each of them
             // under the action of this isogeny. As the domain is an elliptic product,
@@ -565,9 +652,11 @@ macro_rules! define_theta_structure {
             // Per image cost =
             // 2 * (16M + 5S) for the CouplePoint addition
             // 2 * 20M for the base change
-            // 8S + 4M + 1I for the gluing image
+            // 8S + 10M + 1I for the gluing image with previous method
+            // 8S + 9M for the gluing image with new method
             // Total:
-            // 76M + 18S + 1I per point
+            // 18S + 82M + 1I per point with previous method
+            // 18S + 81M per point with new method
             for P in image_points.iter() {
                 // Need affine coordinates here to do an add, if we didn't we
                 // could use faster x-only... Something to think about but no
@@ -582,7 +671,7 @@ macro_rules! define_theta_structure {
 
                 // With a point and the shift value from the kernel, we can find
                 // the image
-                let T_image = gluing_image(&T, &T_shift, &a_inv, &b_inv, z_idx);
+                let T_image = gluing_image(&T, &T_shift, &precomp, z_idx, flag);
                 theta_images.push(T_image);
             }
 
@@ -602,35 +691,83 @@ macro_rules! define_theta_structure {
         /// Given the 8-torsion above the kernel, compute the codomain of the
         /// (2,2)-isogeny and the image of all points in `image_points`
         /// Cost:
-        /// Codomain: 8S + 13M + 1I
-        /// Image: 4S + 3M
+        /// Codomain: 8S + 13M + 1I with previous method
+        /// Codomain: 8S + 23M + 1I with previous method (without precomputation)
+        /// Codomain: 8S + 9M with new method
+        /// Image: 4S + 3M with previous method
+        /// Image: 4S + 4M with new method
         fn two_isogeny(
             domain: &ThetaStructure,
             T1: &ThetaPoint,
             T2: &ThetaPoint,
             image_points: &mut [ThetaPoint],
             hadamard: [bool; 2],
+            flag: bool,
         ) -> ThetaStructure {
             // Compute the squared theta transform of both elements
             // of the kernel
-            let (xA, xB, _, _) = T1.squared_theta();
-            let (zA, tB, zC, tD) = T2.squared_theta();
+            let (mut xA, mut xB, mut yC, mut yD) = T1.coords();
+            let (mut zA, mut tB, mut zC, mut tD) = T2.coords();
+            if hadamard[0] {
+                (xA, xB, yC, yD) = to_hadamard(&xA, &xB, &yC, &yD);
+                (zA, tB, zC, tD) = to_hadamard(&zA, &tB, &zC, &tD);
+            }
+            (xA, xB, _, _) = to_squared_theta(&xA, &xB, &yC, &yD);
+            (zA, tB, zC, tD) = to_squared_theta(&zA, &tB, &zC, &tD);
 
-            // Batch invert denominators
-            let mut inverse = [xA, zA, tB];
-            Fq::batch_invert(&mut inverse);
+            let [mut A, mut B, mut C, mut D]: [Fq; 4];
+            let [A_inv, B_inv, C_inv, D_inv]: [Fq; 4];
 
-            // Compute the codomain coordinates
-            let mut A = Fq::ONE;
-            let mut B = &xB * &inverse[0];
-            let mut C = &zC * &inverse[1];
-            let mut D = &tD * &inverse[2] * &B;
+            if flag {
+                // Compute the codomain coordinates
+                let xAtB = &xA * &tB;
+                let zAxB = &zA * &xB;
+                A = &xAtB * &zA;
+                B = &zAxB * &tB;
+                C = &xAtB * &zC;
+                D = &zAxB * &tD;
 
-            // Inverses will be used for evaluation below
-            let B_inv = &domain.arithmetic_precom[3] * &B;
-            let C_inv = &domain.arithmetic_precom[4] * &C;
-            let D_inv = &domain.arithmetic_precom[5] * &D;
+                // Inverses will be used for evaluation below
+                let zCtD = &zC * &tD;
+                A_inv = &xB * &zCtD;
+                B_inv = &xA * &zCtD;
+                C_inv = D;
+                D_inv = C;
+            } else {
+                if (!hadamard[0]) && (domain.arithmetic_precom != [Fq::ZERO; 8]) {
+                    // Batch invert denominators
+                    let mut inverse = [xA, zA, tB];
+                    Fq::batch_invert(&mut inverse);
 
+                    // Compute the codomain coordinates
+                    A = Fq::ONE;
+                    B = &xB * &inverse[0];
+                    C = &zC * &inverse[1];
+                    D = &tD * &inverse[2] * &B;
+
+                    // Inverses will be used for evaluation below
+                    A_inv = Fq::ONE;
+                    B_inv = &domain.arithmetic_precom[5] * &B;
+                    C_inv = &domain.arithmetic_precom[6] * &C;
+                    D_inv = &domain.arithmetic_precom[7] * &D;
+                } else {
+                    // Batch invert denominators
+                    let mut inverse = [xA, zA, tB, xB, zC, tD];
+                    Fq::batch_invert(&mut inverse);
+
+                    // Compute the codomain coordinates
+                    A = Fq::ONE;
+                    B = &xB * &inverse[0];
+                    C = &zC * &inverse[1];
+                    D = &tD * &inverse[2] * &B;
+
+                    // Inverses will be used for evaluation below
+                    A_inv = Fq::ONE;
+                    B_inv = &inverse[3] * &xA;
+                    C_inv = &inverse[4] * &zA;
+                    D_inv = &inverse[5] * &tB * &B_inv;
+                }
+            }
             // Finish computing the codomain coordinates
             // For the penultimate case, we skip the hadamard transformation
             if hadamard[1] {
@@ -643,13 +780,19 @@ macro_rules! define_theta_structure {
                 let (mut XX, mut YY, mut ZZ, mut TT) = P.coords();
                 if hadamard[0] {
                     (XX, YY, ZZ, TT) = to_hadamard(&XX, &YY, &ZZ, &TT);
-                    (XX, YY, ZZ, TT) = to_squared_theta(&XX, &YY, &ZZ, &TT);
-                } else {
-                    (XX, YY, ZZ, TT) = to_squared_theta(&XX, &YY, &ZZ, &TT);
                 }
-                YY *= &B_inv;
-                ZZ *= &C_inv;
-                TT *= &D_inv;
+                (XX, YY, ZZ, TT) = to_squared_theta(&XX, &YY, &ZZ, &TT);
+
+                if flag {
+                    XX *= &A_inv;
+                    YY *= &B_inv;
+                    ZZ *= &C_inv;
+                    TT *= &D_inv;
+                } else {
+                    YY *= &B_inv;
+                    ZZ *= &C_inv;
+                    TT *= &D_inv;
+                }
 
                 if hadamard[1] {
                     (XX, YY, ZZ, TT) = to_hadamard(&XX, &YY, &ZZ, &TT);
@@ -672,6 +815,7 @@ macro_rules! define_theta_structure {
         /// Cost:
         /// Codomain: 8S + 23M + 1I
         /// Image: 4S + 3M
+        #[allow(dead_code)]
         fn two_isogeny_to_product(
             T1: &ThetaPoint,
             T2: &ThetaPoint,
@@ -1098,30 +1242,31 @@ macro_rules! define_theta_structure {
             kernel_couple_pts.push(*Q1Q2);
 
             // Compute points of order 8
-            let P1P2_8 = E1E2.double_iter(&P1P2, n - 1);
-            let Q1Q2_8 = E1E2.double_iter(&Q1Q2, n - 1);
+            let P1P2_8 = E1E2.double_iter(&P1P2, n - 1, false);
+            let Q1Q2_8 = E1E2.double_iter(&Q1Q2, n - 1, false);
 
             // Compute Gluing isogeny
             let (mut domain, mut kernel_pts) =
-                gluing_isogeny(&E1E2, &P1P2_8, &Q1Q2_8, &kernel_couple_pts);
+                gluing_isogeny(&E1E2, &P1P2_8, &Q1Q2_8, &kernel_couple_pts, false);
 
             // Do all remaining steps
             let mut Tp1: ThetaPoint;
             let mut Tp2: ThetaPoint;
             for k in 1..n {
                 // Repeatedly double to obtain points in the 8-torsion below the kernel
-                Tp1 = domain.double_iter(&kernel_pts[num_image_points], n - k - 1);
-                Tp2 = domain.double_iter(&kernel_pts[num_image_points + 1], n - k - 1);
+                Tp1 = domain.double_iter(&kernel_pts[num_image_points], n - k - 1, false);
+                Tp2 = domain.double_iter(&kernel_pts[num_image_points + 1], n - k - 1, false);
 
                 // For the last two steps, we need to be careful because of the zero-null
                 // coordinates appearing from the product structure. To avoid these, we
                 // use the hadamard transform to avoid them,
                 if k == (n - 2) {
-                    domain = two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [false, false])
+                    domain =
+                        two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [false, false], false)
                 } else if k == (n - 1) {
-                    domain = two_isogeny_to_product(&Tp1, &Tp2, &mut kernel_pts)
+                    domain = two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [true, false], false)
                 } else {
-                    domain = two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [false, true])
+                    domain = two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [false, true], false)
                 }
             }
 
@@ -1146,6 +1291,7 @@ macro_rules! define_theta_structure {
             image_points: &[CouplePoint],
             n: usize,
             strategy: &[usize],
+            flag: &[bool],
         ) -> (EllipticProduct, Vec<CouplePoint>) {
             // Store the number of image points we wish to evaluate to
             // ensure we return them all from the points we push through
@@ -1182,8 +1328,8 @@ macro_rules! define_theta_structure {
                 level.push(strategy[strat_idx]);
 
                 // Double the points according to the strategy
-                ker1 = E1E2.double_iter(&ker1, strategy[strat_idx]);
-                ker2 = E1E2.double_iter(&ker2, strategy[strat_idx]);
+                ker1 = E1E2.double_iter(&ker1, strategy[strat_idx], flag[0]);
+                ker2 = E1E2.double_iter(&ker2, strategy[strat_idx], flag[0]);
 
                 // Add these points to the image points
                 kernel_couple_pts.push(ker1);
@@ -1201,7 +1347,7 @@ macro_rules! define_theta_structure {
 
             // Compute Gluing isogeny
             let (mut domain, mut kernel_pts) =
-                gluing_isogeny(&E1E2, &ker1, &ker2, &kernel_couple_pts);
+                gluing_isogeny(&E1E2, &ker1, &ker2, &kernel_couple_pts, flag[0]);
 
             // ======================================================
             // All other steps
@@ -1225,8 +1371,8 @@ macro_rules! define_theta_structure {
                     level.push(strategy[strat_idx]);
 
                     // Double the points according to the strategy
-                    Tp1 = domain.double_iter(&Tp1, strategy[strat_idx]);
-                    Tp2 = domain.double_iter(&Tp2, strategy[strat_idx]);
+                    Tp1 = domain.double_iter(&Tp1, strategy[strat_idx], flag[k]);
+                    Tp2 = domain.double_iter(&Tp2, strategy[strat_idx], flag[k]);
 
                     // Add these points to the image points
                     kernel_pts.push(Tp1);
@@ -1246,11 +1392,29 @@ macro_rules! define_theta_structure {
                 // coordinates appearing from the product structure. To avoid these, we
                 // use the hadamard transform to avoid them,
                 if k == (n - 2) {
-                    domain = two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [false, false])
+                    domain = two_isogeny(
+                        &domain,
+                        &Tp1,
+                        &Tp2,
+                        &mut kernel_pts,
+                        [false, false],
+                        flag[k],
+                    )
                 } else if k == (n - 1) {
-                    domain = two_isogeny_to_product(&Tp1, &Tp2, &mut kernel_pts)
+                    domain =
+                        two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [true, false], flag[k])
                 } else {
-                    domain = two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [false, true])
+                    domain =
+                        two_isogeny(&domain, &Tp1, &Tp2, &mut kernel_pts, [false, true], flag[k]);
+                    //debug start
+                    //println!(
+                    //    "domain.null_point\nF({}), F({}), F({}), F({})",
+                    //    domain.null_point().X,
+                    //    domain.null_point().Y,
+                    //    domain.null_point().Z,
+                    //    domain.null_point().T
+                    //);
+                    //debug end
                 }
             }
 

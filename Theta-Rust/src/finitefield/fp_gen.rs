@@ -1826,6 +1826,20 @@ macro_rules! define_fp_core {
                 self.set_sub(other);
             }
         }
+
+        impl PartialEq for Fp {
+            #[inline(always)]
+            fn eq(&self, other: &Fp) -> bool {
+                for i in 0..N {
+                    if self.0[i] != other.0[i] {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+        impl Eq for Fp {}
     };
 } // End of macro: define_fp_core
 
