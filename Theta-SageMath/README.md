@@ -1,5 +1,41 @@
 # SageMath (2, 2)-isogenies in the Theta Model 
 
+We have made some changes on the GitHub repository [two-isogenies](https://github.com/ThetaIsogenies/two-isogenies) to implement our inversion-free method. These changes are listed in [Changes](#changes). We also keep the original `README` file content in [Original](#original).
+
+For the benchmark, run the `./Theta-SageMath/benchmark_mixed_strategy.py`.
+
+## Changes
+
+- In `strategy.py`
+  - Modify the function `optimal_strategy(...)` to our mixed optimal strategy (Procedure 7 in our paper).
+- In `couple_point.py`
+  - Added function `x_dbl_add(...)` to perform the x-only ladder on Montgomery curves.
+  - Added a new parameter `flag` for function `double_iter(...)` to choose which doubling method to perform.
+  - Added some codes for function `double_iter(...)` to perform our doubling method.
+- In `dimension_two.py`
+  - Changed the function name from `_arithmetic_precomputation` to `precomputation`.
+  - Added a new parameter `flag` in function `precomputation(...)`.
+  - Added some codes in function `precomputation(...)` to perform our inversion-free method.
+  - Added a new parameter `flag` in function `double(...)`.
+  - Added some codes in function `double(...)` to perform our inversion-free method.
+  - Added a new parameter `flag` in function `diff_add(...)`.
+  - Added some codes in function `diff_add(...)` to perform our inversion-free method.
+  - Added a new parameter `flag` in function `double_iter(...)`.
+- In `gluing_isogeny.py`
+  - Added a new element `flag` for `clss GluingThetaIsogeny`.
+  - Added some codes in functions `_special_compute_codomain(...)` and `special_image(...)` to perform our inversion-free method.
+- In `isogeny.py`
+  - Added a new element `flag` for `class ThetaIsogeny`.
+  - Added some codes in functions `_compute_codomain(...)` and `__call__(...)` to perform our inversion-free method.
+- In `product_isogeny.py`
+  - Changed the strategy to our mixed optimal strategy.
+- In `isogeny_sqrt.py`
+  - Changed the line 49 and 89 from `self._precomputation = (B_inv, C_inv, D_inv)` to `self._precomputation = (1, B_inv, C_inv, D_inv)`
+- In `product_isogeny_sqrt.py`
+  - Changed the strategy to our mixed optimal strategy.
+
+## Original
+
 This library implements $(2, 2)$-isogenies in the theta model, with the practical application to efficiently compute chains of isogenies between elliptic products.
 
 ### Usage

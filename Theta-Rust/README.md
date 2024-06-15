@@ -1,5 +1,39 @@
 # Constant Time (2, 2)-isogenies in the Theta Model 
 
+We have made some changes on the GitHub repository [two-isogenies](https://github.com/ThetaIsogenies/two-isogenies) to implement our inversion-free method. These changes are listed in [Changes](#changes). We also keep the original `README` file content in [Original](#original).
+
+For the benchmark, run the following command:
+```bash
+RUSTFLAGS="-C target-cpu=native" cargo bench
+```
+See [Examples and Benchmark](#examples-and-benchmarks) for more infomation about benchmark.
+
+## Changes
+
+- In `strategy.py`
+  - Modify the function `optimal_strategy(...)` to our mixed optimal strategy (Procedure 7 in our paper).
+- In `fp_gen.rs` and `fp2_gen.rs`
+  -  Added traits `PartialEq` and `Eq`, respectively.
+- In `main.rs`, `sqi_chain.rs`, `isogeny_chain.rs` and `festa_chain.rs`
+  - Changed the strategy to our mixed optimal strategy.
+- In `eccore.rs`
+  - Added function `x_dbl_add(...)` to perform the x-only ladder on Montgomery curves.
+  - Added a new parameter `flag` for function `double_iter(...)` to choose which doubling method to perform.
+  - Added some codes for function `double_iter(...)` to perform our doubling method.
+- In `theta.rs`
+  - For struct `ThetaStructure`
+    - Changed the type of `arithmetic_precom` from `[Fq; 6]` to `[Fq; 8]`.
+    - `arithmetic_precom` is now assigned to `[Fq::ZERO; 8]` in functions `new_from_coords(...)` and `new_from_point(...)`.
+    - Changed the parameters of function `precomputation(...)` from `precomputation(O0: &ThetaPoint) -> [Fq; 6]` to `precomputation(&mut self, flag: bool) -> [Fq; 8]`.
+    - Added some codes in function `precomputation(...)` to perform our inversion-free method.
+    - Added a new parameter `flag` in function `set_double_self(...)`, `double_point(...)` and `double_iter(...)`.
+    - Added some codes in function `set_double-self(...)` to perform our inversion-free method.
+  - Added a new parameter `flag` in functions `gluing_codomain(...)`, `gluing_image(...)`, `gluing_isogeny(...)`, `two_isogeny(...)` and `product_isogeny(...)`.
+  - Added some codes in the above functions to perform our inversion-free method.
+- Deleted some unnecessary files and comments.
+
+## Original
+
 This library implements $(2, 2)$-isogenies in the theta model for the purpose of cryptographic research. The current implementation focuses on an efficient and constant time implementation of a $(2^n, 2^n)$-isogeny between elliptic products, with the aim of improving the performance of isogeny-based primitives, such as FESTA[^1].
 
 [^1]: https://eprint.iacr.org/2023/660
