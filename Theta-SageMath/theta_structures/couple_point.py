@@ -73,17 +73,6 @@ class CouplePoint:
 
         return X2P, Z2P, XQP, ZQP
 
-    def double_iter_old(self, n):
-        """
-        Compute [2^n] P = ([2^n] P1, [2^n] P2)
-        """
-        # When the scalar is a python int, then
-        # sagemath does multiplication naively, when
-        # the scalar in a Sage type, it instead calls
-        # _acted_upon_, which calls pari, which is fast
-        m = ZZ(2**n)
-        return m * self
-    
     def double_iter(self, n, flag=False):
         """
         Compute [2^n] P = ([2^n] P1, [2^n] P2)
