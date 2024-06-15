@@ -538,25 +538,6 @@ macro_rules! define_ec_core {
                     P3.X = X;
                     P3.Y = Y;
                     P3.Z = Z;
-                    // Recover y-coordinates
-                    // Cost: 1S + 13M
-                    //let x0z = &X0 * &P.Z;
-                    //let xz0 = &P.X * &Z0;
-                    //let x0x = &X0 * &P.X;
-                    //let z0z = &Z0 * &P.Z;
-                    //let x0zxz0 = &x0z + &xz0;
-                    //let x0xz0z = &x0x + &z0z;
-                    //let z0zx0x = &z0z * &x0x;
-                    //let z0zx0xdA = &self.A.mul2() * &z0zx0x;
-                    //let mut u = &x0zxz0 * &x0xz0z;
-                    //u += &z0zx0xdA;
-                    //u *= &Z1;
-                    //let mut v = (&x0z - &xz0).square();
-                    //v *= &X1;
-                    //let w = &P.Y.mul2() * &z0z * &Z1;
-                    //P3.X = &w * &X0;
-                    //P3.Y = &v - &u;
-                    //P3.Z = &w * &Z0;
                 } else {
                     for _ in 0..n {
                         self.double_self(&mut P3);
