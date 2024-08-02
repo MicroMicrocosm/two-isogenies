@@ -70,9 +70,9 @@ def optimised_strategy(n):
         return cost
     
     def EVALcost(n, Lflag, leftmost):
-        cost = 0
-        for i in range(n):
-            cost = cost + img_cost[Lflag[i]][leftmost]
+        cost = img_cost[Lflag[0]][leftmost]
+        for i in range(1, n):
+            cost = cost + img_cost[Lflag[i]][False]
         return cost
     
     def CODOMAINcost(flag, leftmost, precomp):
