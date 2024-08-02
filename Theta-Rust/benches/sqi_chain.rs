@@ -55,7 +55,7 @@ fn criterion_product_chain(c: &mut Criterion) {
     // Point to push through isogeny
     let PA = Point::INFINITY;
     let PB = Point::new_xy(&PA_X, &PA_Y);
-    let PAPB = CouplePoint::new(&PA, &PB);
+    let _PAPB = CouplePoint::new(&PA, &PB);
     let image_points = [];
 
     // Length of isogeny chain
@@ -63,20 +63,20 @@ fn criterion_product_chain(c: &mut Criterion) {
 
     // Precomputed with strategy.py
     let strategy: [usize; 125] = [
-        125, 48, 30, 18, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1,
-        1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 11, 7, 4, 3, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 18, 11, 7, 4, 3, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1,
-        1, 3, 1, 1, 1, 1, 1,
+        59, 37, 18, 11, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1,
+        1, 1, 14, 9, 5, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 5, 4, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 29, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3,
+        1, 1, 1, 1, 1, 1, 1, 1, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1,
+        1, 1, 1, 1, 1, 1,
     ];
     let flag: [bool; 126] = [
-        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-        true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
+        false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-        true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, false, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, false, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
         true, true, true, true, true, true,
     ];

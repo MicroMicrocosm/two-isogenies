@@ -54,7 +54,7 @@ fn criterion_product_chain(c: &mut Criterion) {
     // Point to push through isogeny
     let PA = Point::INFINITY;
     let PB = Point::new_xy(&PA_X, &PA_Y);
-    let PAPB = CouplePoint::new(&PA, &PB);
+    let _PAPB = CouplePoint::new(&PA, &PB);
     let image_points = [];
 
     // Length of isogeny chain
@@ -62,28 +62,28 @@ fn criterion_product_chain(c: &mut Criterion) {
 
     // Precomputed with strategy.py
     let strategy: [usize; 207] = [
-        207, 79, 52, 29, 18, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1,
-        1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 11, 7, 4, 3, 1, 1, 1, 1,
-        1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 23, 11, 7, 4, 3, 1, 1, 1, 1, 1,
-        1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 9, 5, 4, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 30, 20, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1,
-        1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1,
-        1, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1,
+        93, 56, 29, 18, 11, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1,
+        1, 1, 1, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1,
+        1, 27, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1,
+        9, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 41, 23, 11,
+        7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 9, 5, 4,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 18, 9, 5, 4, 1, 1, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1,
     ];
     let flag: [bool; 208] = [
-        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, false, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
         false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-        true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, false,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-        true, true, false, true, true, true, true, true, true, true, true, true, true, true, true,
-        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
-        true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
-        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-        true, true, true, true, true, true, true, true, false, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, false, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, false, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, false, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, false, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true,
     ];
 

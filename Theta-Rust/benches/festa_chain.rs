@@ -72,8 +72,8 @@ fn criterion_product_chain(c: &mut Criterion) {
     let L12 = Point::new_xy(&L12_X, &L12_Y);
     let L21 = Point::new_xy(&L21_X, &L21_Y);
     let L22 = Point::new_xy(&L22_X, &L22_Y);
-    let L1 = CouplePoint::new(&L11, &L12);
-    let L2 = CouplePoint::new(&L21, &L22);
+    let _L1 = CouplePoint::new(&L11, &L12);
+    let _L2 = CouplePoint::new(&L21, &L22);
 
     // let image_points = [L1, L2];
     let image_points = [];
@@ -83,15 +83,15 @@ fn criterion_product_chain(c: &mut Criterion) {
 
     // Precomputed from strategy.py
     let strategy: [usize; 631] = [
-        631, 265, 152, 86, 49, 32, 18, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3,
-        1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 14, 7, 4, 3, 1,
-        1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 5, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 19, 12, 7, 4,
-        3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 37, 19, 12, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3,
-        1, 1, 1, 1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1,
-        1, 1, 1, 1, 18, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1,
-        1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 66, 37, 19, 12, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1,
-        1, 1, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1,
+        265, 154, 96, 55, 32, 18, 11, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1,
+        1, 3, 1, 1, 1, 1, 1, 14, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 5, 4, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 23, 14, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 5, 4, 1,
+        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 9, 5, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, 1,
+        1, 1, 41, 23, 14, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 5, 4, 1, 1, 1, 1, 1,
+        1, 1, 1, 1, 1, 1, 9, 5, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 18, 9,
+        5, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1,
+        1, 1, 3, 1, 1, 1, 1, 1, 66, 37, 19, 14, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1,
+        5, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1,
         1, 18, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1,
         1, 3, 1, 1, 1, 1, 1, 29, 18, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 7, 4, 3,
         1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 11, 7, 4, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 1, 1, 1,
@@ -107,22 +107,22 @@ fn criterion_product_chain(c: &mut Criterion) {
         1, 1, 1, 3, 1, 1, 1, 1, 1,
     ];
     let flag: [bool; 632] = [
-        true, false, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, false, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, false, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, false, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, false, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, false, true, true,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        false, true, true, true, true, true, true, true, true, true, true, true, true, true, false,
+        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+        true, true, true, true, true, true, true, false, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
         false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
         true, true, true, false, true, true, true, true, true, true, true, true, true, true, true,
         true, true, true, true, true, true, false, true, true, true, true, true, true, true, true,
-        true, true, true, true, true, false, true, true, true, true, true, true, true, true, true,
-        true, true, true, true, true, true, true, true, false, true, true, true, true, true, true,
-        true, true, true, true, true, false, true, true, true, true, true, true, true, true, true,
-        true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
-        true, true, true, true, true, true, true, true, true, true, true, true, false, true, true,
-        true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
-        true, true, true, true, true, true, true, true, true, true, true, true, true, false, true,
-        true, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
-        true, true, false, true, true, true, true, true, true, true, true, true, true, true, true,
-        true, true, true, true, true, false, true, true, true, true, true, true, true, true, true,
-        true, true, true, true, true, true, true, true, false, true, true, true, true, true, true,
         true, true, true, true, true, false, true, true, true, true, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, false, true, true, true, true, true,
         true, true, true, true, true, true, true, true, true, true, true, true, true, false, true,
