@@ -516,28 +516,26 @@ macro_rules! define_ec_core {
                         (X0, Z0, X1, Z1) =
                             Self::x_dbl_add(&X0, &Z0, &X1, &Z1, &P.X, &P.Z, &self.A24);
                     }
-                    // REcover y-coordinates
-                    // Cost: 3S + 11M
-                    let mut t = &Z0 * &Z1;
-                    let mut X = &X0 * &t;
-                    let mut Z = &Z0 * &t;
-                    t = &P.X.square() + &self.A.mul2() * &P.X + Fq::ONE;
-                    t *= &X;
-                    let mut Y = X0.square();
+                    // Recover y-coordinates of k*P with
+                    // k*P = [X0 : ~ : Z0] and (k-1)*P = [X1 : ~ : Z1]
+                    // Cost: 1S + 13M
+                    let X0Z = &X0 * &P.Z;
+                    let XZ0 = &P.X * &Z0;
+                    let X0X = &X0 * &P.X;
+                    let Z0Z = &Z0 * &P.Z;
+                    let dYZ1 = &P.Y.mul2() * &Z1;
+                    let dYZ1Z0Z = &dYZ1 * &Z0Z;
+                    P3.X = &dYZ1Z0Z * &X0;
+                    P3.Z = &dYZ1Z0Z * &Z0;
+                    let t1 = &X0Z + &XZ0;
+                    let t2 = &X0X + &Z0Z;
+                    let t3 = &X0Z - &XZ0;
+                    let t4 = &Z0Z * &X0X;
+                    let mut Y = &t1 * &t2;
+                    Y += &self.A.mul2() * t4;
                     Y *= &Z1;
-                    Y += &Z;
-                    Y *= &P.X;
-                    Y += &t;
-                    t = &P.X * &Z0;
-                    t -= &X0;
-                    t = t.square();
-                    t *= &X1;
-                    Y = &t - &Y;
-                    X *= &P.Y.mul2();
-                    Z *= &P.Y.mul2();
-                    P3.X = X;
+                    Y -= &X1 * &t3.square();
                     P3.Y = Y;
-                    P3.Z = Z;
                 } else {
                     for _ in 0..n {
                         self.double_self(&mut P3);
